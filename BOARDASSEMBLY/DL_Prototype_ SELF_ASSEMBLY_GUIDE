@@ -1,0 +1,55 @@
+PROTOTYPE SELF ASSEMBLY GUIDE
+
+//// PHYSICAL SETUP NOTES FOR REV F / G PROTOTYPES FOLLOW ///// 
+
+PHYSICAL SETUP GUIDANCE FOR PROTOTYPES:
+The physical assembly steps:
+
+1) Solder the header pins to the ESP32-S3, the DS3231 RTC, and the AS7341 light sensor boards.  Short end of pin to the board, long end down.
+
+Begin attaching the secondary boards to the PCB
+2) Attach the DS3231 RTC board as shown below with a piece of heat shrink under the battery contact.  This is to prevent the battery contact from shorting the main board via the pads for assembly below it. Be sure pins match the labeling on the circuit board. Be aware that the clearance between the DS3231 and the AS7341 boards is  ~ .5mm
+ 
+3) Once the DS3231 is soldered in place from below you are going to get ready to connect a 10k axial resistor between the underside of the VCC pin of the RTC and the SQW pin. See below indicating the VCC and SQW pin.
+ 
+
+3 B – Finished view
+You’ll want to trim the resistor to size and loop the wire over the pins. You’ll also want to slide. A piece of heat shrink  over it to prevent shorting something out in the case. The heat from the soldering iron will take care of the shrink.  
+
+4) The next step is soldering on the AS 7341 board in the JP5 / AS7341 section of pins.  No special tricks needed.
+
+
+5) Then solder on a 10k resistor between the switch pin for the button S1 and VCC and between S2 and VCC.  
+
+The resistors go from the VCC pin to the switch pin for switch 1 and switch 2. These are labeled 1017 and 1018 on the top of the board.  They are the pins that are NOT connected to ground.  I found it was easiest to solder them both the VCC pin in heat shrink then do the button pins later.
+ 
+
+6) Next solder the two buttons at S1 and S2. They have little plastic tabs that snap into the slots and go in nicely. Once done move on the tricky part. 
+SEE IMAGE 
+
+
+
+7) Solder a very low resistance resistor between the RST pin (pin 1) and the switch pin on S1 / 1017. I used a 4.7 ohm resistor. This compensates for a board error that had the reset button going to IO17 instead of RST. 
+ 
+
+8) Slide a battery into the RTC (+ side is up)
+9) UUID and labeling: Issue the board a unique user ID / aka UUID . Using the label maker, make 2 labels using ½” tape (in the label maker) that have the UUID on it.
+ For ex:  100010.  
+Record the UUID on the tracking sheet. It needs to be associated with a MAC ID, and the UUID must match the AWS Certificate. 
+Put one of the  UUID  label on the underside of the board in the clear space under the battery holder.  Save the second to go on the bottom of packing box.
+For the artist proof and prototype edition using the marker indicate the number on the edition line (on the underside of the board) using a black marker.
+
+FYI - The series number schema: 
+  //// Series 1000xx are testing boards, using boards labeled REV F that are green boards
+  //// Series 1xx2xx are the "artist prototypes" or first publicly distributed and use the white circuit "artist prototype, ed of 50"
+ //// Series 2xxxxx are the "artist proof" series or the first SMT assembled series. These include hardware support to attach a VOC and Methane sensor
+  //// Series 3xxxxx are reserved for the future production run of sensors. These will include a VOC and Methane sensor
+
+10)   Place the completed board into the clear case base.
+
+11)   Use 4 2.5mm x 4mm stainless screws to secure the board to the case. 
+
+YOU ARE NOW READY TO FLASH THE BOARD – Go back to the steps SOFTWARE SETUP AND CONFIG.
+
+12)   Once flashed snap the lid – here’s a finished view ready to be boxed up of the very first Rev F prototype. 
+ 

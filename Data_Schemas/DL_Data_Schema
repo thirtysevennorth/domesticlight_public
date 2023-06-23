@@ -1,0 +1,161 @@
+Domestic Light Data Schema
+Rev 5 June 2023
+
+Raw data:
+The board sends a JSON packet over MQTT to the AWS server. That raw data packet consists of
+{
+  "MAC_ID": "71:00:00:00:00:00", // Board MAC ID
+  "F1_415": 365,  // All Light intensity values are spectra RAW counts, use ATIME, ASTEP, GAIN to normalise using the AMS "Basic Counts" methodology. Convert to spectra using AMS spectral reconstruction method. 16 bit.
+  "F2_445": 524,
+  "F3_480": 642,
+  "F4_515": 894,
+  "F5_555": 917,
+  "F6_590": 1065,
+  "F7_630": 1216,
+  "F8_680": 1290,
+  "F9_VIS": 5082, // Visible or unfiltered 
+  "F10_NIR": 3664,  // Near IR
+  "UUID": 100200,  // Sensor UUID - our key value, a 6 digit integer number
+  "unixtime": 16885924910, // The unixtime stamp the packet was recorded at - set by the RTC at flashing, and checked daily against NTP
+  "RTCTemp": 21.25, // the temperature of the board for calibrating light readings
+  "ATIME": 29,  // The light sensor integration time in microseconds. see AMS documentation on basic counts
+  "ASTEP": 599, // the light sensor integration step size in microseconds.  see AMS documentation on basic counts
+  "GAIN": 7, // the index of the gain level in powers of 2. 1=1x, 2=2x, 3=4x, 4=16x, 5=32x, 6=64x, 7=128x, 8=256x etc. see AMS documentation on basic counts and adafruit AS7341.cpp enum definign GAIN
+  "ENV1": 0, // FUTURE USE placeholder for readings from v2 boards with ENS160 VOC 
+  "ENV2": 0, // FUTURE USE placeholder for readings from v2 boards with ENS160 VOC 
+  "ENV3": 0, // FUTURE USE placeholder for readings from v2 boards with ENS160 VOC 
+  "ENV4": 0, // FUTURE USE placeholder for readings from v2 boards with ENS160 VOC 
+  "ENV5": 0, // FUTURE USE placeholder for readings from v2 boards with ENS160 VOC 
+  "ENV6": 0, // FUTURE USE placeholder for readings from v2 boards with ENS160 VOC 
+}
+
+
+OSC Data:
+The board optionally sends OSC data to a specified local IP address. 
+Available data over OSC is the same as above, but currently w/o the environmental data
+
+
+Web data fields:
+The DL web API uses a custom GeoJson packet to transmit light and location information to the website as well as serve the archive format.
+Two data keys are the UUID (or sensor ID) and the unixtime in seconds. 
+At the AWS layer the following data is  added to the packet and it is formed into a GeoJson:
+Host Name (Full Name or Anonoymous)
+Time Zone (ISO Code, Name, UTC Offset)
+Location (City, Province, Country)
+Lat / Long (in decimal)
+RGB or HSL color value
+Normalised spectral data values
+The packet has a placeholder for future environmental data points labeled env01 - env06.
+
+
+
+Animation: The Unixtime number serves as our frame number for animation purposes. Time series adjustment will set all of our unixtime readings to the nearest synced value for a given sample rate. With a sample time of once every ten seconds that gives us 3,153,600 samples for the year. Played back at an animation rate of hypothetical 60 FPS that is 52,560 seconds of data or approximatley the year in 14 hours. 
+
+
+
+////////    EXAMPLE OF GEO JSON FORMAT FROM AWS USING A FEATURE AS THE "LOCATION", PROPERTIES AS THE INCREMMENTAL DATA 
+////////
+
+ {
+ "uuid": "100200",
+ "location_name": "Brighton",
+ "GeoJson": {
+  "geometry": {
+   "coordinates": {
+    "latitude": 50.82,
+    "longitude": -0.15
+   },
+   "type": [
+    "Point"
+   ]
+  },
+  "location": {
+   "city": "Brighton",
+   "country": "United States",
+   "province": "England"
+  },
+  "properties": {
+   "uuid": 100200,
+   "colors": {
+    "F1": {
+     "color": "violet",
+     "intensity": 100,
+     "nm": 415
+    },
+    "F10": {
+     "color": "NIR",
+     "intensity": 75,
+     "nm": 710
+    },
+    "F2": {
+     "color": "light violet",
+     "intensity": 75,
+     "nm": 445
+    },
+    "F3": {
+     "color": "light violet",
+     "intensity": 75,
+     "nm": 480
+    },
+    "F4": {
+     "color": "light violet",
+     "intensity": 75,
+     "nm": 515
+    },
+    "F5": {
+     "color": "light violet",
+     "intensity": 75,
+     "nm": 555
+    },
+    "F6": {
+     "color": "light violet",
+     "intensity": 75,
+     "nm": 590
+    },
+    "F7": {
+     "color": "light violet",
+     "intensity": 75,
+     "nm": 630
+    },
+    "F8": {
+     "color": "light violet",
+     "intensity": 75,
+     "nm": 680
+    },
+    "F9": {
+     "color": "clear",
+     "intensity": 75,
+     "nm": "415-700"
+    }
+   },
+   "env_data": {
+    "env01": 0,
+    "env02": 0,
+    "env03": 0,
+    "env04": 0,
+    "env05": 0,
+    "env06": 0
+   },
+   "hostname": "Evelyn Ficarra",
+   "marker_color": {
+    "Hue": 0,
+    "Luminance": 0,
+    "Saturation": 0
+   },
+   "unixtime": 16885924910
+  },
+  "Time Zone": {
+   "ISO Time Zone Code": 0,
+   "Time Zone Name": "BST",
+   "UTC Offset": 1
+  },
+  "type": {
+   "L": [
+    {
+     "S": "Feature"
+    }
+   ]
+  }
+ }
+}
+
