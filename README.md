@@ -81,18 +81,11 @@ These are assigned by admin and unique to each device
 
 INITIAL FACTORY SETUP / INIT
 * Connect board via USB-C connector on ESP32 to your computer running the Arduino IDE with the DL_client_INIT.ino file open. 
-* Edit secrets.h to include:
+* Edit the local copy of secrets.h to include:
     * your test network wifi info - be sure to remove when done before shipping the board.
     * the board UUID 
-        * // UUID NOTE this is our internal six digit serial - ex. 100001.
-        * //// Series 1xxxxx are "prototypes" in general.
-        * //// Series 1000xx are testing boards, using boards labeled REV F that are green boards
-	* //// Series 1xx2xx are the "artist prototypes" or first publically distributed and use the white circuit "artist prototype, ed of 50"
-	* //// Series 2xxxxx are the "artist proof" series or the first SMT assembled series. These include hardware support to attach a VOC and Methane sensor
-	* //// Series 3xxxxx are reserved for the future production run of sensors. These will include a VOC and Methane sensor.
-    * AWS Endpoint for the device - may vary depending on location of device
-    * AWS device private key,  //matching your UUID / THINGNAME
-    * AWS device cert to match your assigned UUID.
+    * Endpoint for the device - may vary depending on location of device
+    * device private key, and device cert to match the device UUID.
     
 * PUT BOARD INTO BOOT MODE FOR FIRST FLASH: 
    * press and hold "boot" button on the board
@@ -118,28 +111,18 @@ The wifi will disconnect. Press the RST button if the board doesn't automaticall
 * at this point the board should be fully configured. Watch the serial monitor for output. you should see something like this:
 
 * /////////////  START OF SAMPLE SERIAL MONITOR OUTPUT
-* 14:37:27.380 -> done
 * 14:37:27.380 -> IP address: xxx.xxx.x.xx // the boards IP address 
 * 14:37:27.380 -> Listening for OSC on UDP port 15000 // the UDP port the board is listenting on
 * 14:37:27.380 -> Connecting to AWS IOT  // AWS config info 
 * 14:37:29.447 -> AWS IoT Connected! - subscribe and publish topics
-* 14:37:29.447 -> DomesticLight/100004/sub  // these topics should reflect the boards UUID which shoudl be tied to the MAC ID
-* 14:37:29.447 -> DomesticLight/100004/data
+* 14:37:29.447 -> DomesticLight/xxxxxx/data
 
 * 14:37:29.447 -> Initializing the RTC...done
 * 14:37:29.447 -> Setting the system clock...done
 * 14:37:32.012 -> Current Time, Date and Temp set to current date and time 
 * 14:37:32.012 -> 2023/5/20 (Saturday) 13:37:32  /// THIS should reflect the current time
 * 14:37:32.012 ->  since midnight 1/1/1970 = 1684589852s = 19497d
-* 14:37:32.012 -> Temperature: 26.25 C
-* 14:37:32.012 -> Starting the color sensor...done.
-* 14:37:32.143 -> Sent to data and shadow 203 bytes: // these data points are what is going to AWS every x seconds. 
+* 14:37:32.143 -> Sent to data and shadow 203 bytes:
 * ////// END SAMPLE SERIAL MONITOR OUTPUT
 
-
-PDF LINK TO BUILD GUIDE BELOW: https://github.com/thirtysevennorth/domesticlight/blob/main/Domestic%20Light%20Sensor%20Assembly%20Guidelines.pdf
-
-
- 
-
-
+PDF LINK TO BUILD GUIDE: https://github.com/thirtysevennorth/domesticlight/blob/main/Domestic%20Light%20Sensor%20Assembly%20Guidelines.pdf
