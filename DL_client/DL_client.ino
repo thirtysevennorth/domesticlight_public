@@ -32,8 +32,8 @@
 //// DEFINE THE RTC USED ///////////////////////////////
 // Production boards use MAX31343, prototypes use DS3231.
 //
-//#define DS3231 // for PROTOTYPE SERIES 
-#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
+#define DS3231 // for PROTOTYPE SERIES 
+//#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
 
 // END OF REQUIRED DEFINITIONS///////////////////////////
 

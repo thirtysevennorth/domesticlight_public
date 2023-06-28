@@ -7,8 +7,8 @@
 
 // Choose  RTC. Production boards use MAX31343, prototypes use DS3231.
 // 
-//#define DS3231
-#define RTC_MAX31343
+#define DS3231
+//#define RTC_MAX31343
 
 #ifdef RTC_MAX31343
 #include  "MAX31343.h" //<AnalogRTCLibrary.h> must place ed
@@ -78,8 +78,8 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 // ESP32-S3 Feather from Adafruit (or w/o PSRAM); Unexpected Maker Feather S3
 ////////////////////////////////////////////////////////////
 
-#define ADAFRUIT_FEATHER_ESP32
-// #define UM_ESP32S3
+//#define ADAFRUIT_FEATHER_ESP32
+#define UM_ESP32S3
 #if defined(ADAFRUIT_FEATHER_ESP32)
 #define DL_PIN_BUTTON1 26 // A0 (ADC2) DAC2 
 #define DL_PIN_BUTTON2 25 // A1 (ADC2) DAC1
