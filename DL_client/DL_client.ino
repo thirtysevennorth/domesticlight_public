@@ -32,8 +32,8 @@
 //// DEFINE THE RTC USED ///////////////////////////////
 // Production boards use MAX31343, prototypes use DS3231.
 //
-#define DS3231 // for PROTOTYPE SERIES 
-//#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
+//#define DS3231 // for PROTOTYPE SERIES 
+#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
 
 // END OF REQUIRED DEFINITIONS///////////////////////////
 
@@ -47,6 +47,7 @@
 
 #ifdef RTC_MAX31343
 #include "MAX31343.h" // this is from the <AnalogRTClib> Arduino library. make the corrections noted to fix the directory error in the header file.
+// #include <FastLED.h>
 #else
 #include <RTClib.h>
 #endif
@@ -152,6 +153,13 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 #define DS3231_ADDRESS 0x68
 #endif
 
+// LED production and prototype led use
+//#define LED_TYPE     WS2812B
+//#define NUM_LEDS   1
+//#define BRIGHTNESS  20
+//#define DATA_PIN     DL_PIN_RGB_LED
+// Define the array of leds
+//CRGB leds[NUM_LEDS];
 ////////////////////////////////////////////////////////////
 // classes and globals
 ////////////////////////////////////////////////////////////
@@ -187,6 +195,7 @@ static as7341_gain_t GAIN = AS7341_GAIN_64X;
 // DATA COLLECTION FREQUENCY
 static int dataFrequency = 5; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
 static int sampleCounter = 0;
+static uint16_t averageValue = 8000;
 
 // used to decide what to do in the loop depending on whether
 // we're in config mode or not. this gets set if button 1 is
@@ -230,7 +239,7 @@ static char macaddrstr[MACADDRSTR_SIZE];
 #define UUID_SIZE 1024
 static String uuid;
 
-#define JSONBUF_SIZE 2048
+#define JSONBUF_SIZE 4096
 static char jsonbuf[JSONBUF_SIZE];
 
 // this is so that we can return a list from a function for the color sensor
@@ -253,7 +262,7 @@ void formatJSON(struct color color,
                 char *buf,
                 size_t buflen)
 {
-    StaticJsonDocument<2000> doc;
+    StaticJsonDocument<2048> doc;
     
     doc["MAC_ID"] =  macaddrstr;   //macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5];  //remove if UUID will work.
     doc["F1_415"] = color.values[0];
@@ -466,10 +475,14 @@ int toggleLED(void)
     if(ledstate == HIGH)
     {
         ledstate = LOW;
+      //  leds[0] = CRGB(0,0,0);
+      //  FastLED.show();
     }
     else
     {
     	ledstate = HIGH;
+     // leds[0] = CRGB(0,0,5);
+    //  FastLED.show();
     }
     digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
@@ -514,11 +527,14 @@ static uint32_t dl_now_unixtime(void)
     if(dl_rtc_online)
     {
         return rtc.now().unixtime();
+        Serial.print("DS3231 RTC _ONLINE: ");
+        Serial.println(dl_rtc_online);
     }
     else
     {
         // Fall back to the system clock
         return time(NULL);
+        Serial.print("DS3231 RTC NOT ONLINE, USING SYSTEM CLOCK: ");
     }
 }
 //// END DS3231 RTC Version /////////////////////
@@ -563,8 +579,8 @@ static bool rtc_init(int rtc_square_wave_pin)
 
 // MAX31343 version DLNOW UNIXTIME
 static uint32_t dl_now_unixtime(void)
-{  Serial.print("RTC update (1=success): ");
-   Serial.println(dl_rtc_online);
+{  // Serial.print("RTC update (1=success): ");
+   // Serial.println(dl_rtc_online);
     if(dl_rtc_online)
     { 
       // struct tm rtc_ctime;
@@ -712,7 +728,24 @@ static void GAINMSG(ose_bundle osevm)
     pushGAINMsg(vm_s, GAIN);
 }
 
-
+static as7341_gain_t AutoGAIN()
+{
+      //averageValue = color.values[10]; //sets visible light as autogain source
+      if (averageValue < 200) {
+      GAIN = AS7341_GAIN_256X; ASTEP = 4000; ATIME = 200;// Set the lowest gain 
+       } 
+      else if (averageValue >= 200 && averageValue < 1000) {GAIN = AS7341_GAIN_128X; ASTEP = 2000; ATIME = 60;// Set the medium gain
+       } 
+      else if (averageValue >= 1000 && averageValue < 6000){ GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;// Set the highest gain
+       }
+      else if (averageValue >= 6000 && averageValue < 12000){ GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;// Set the highest gain
+       }
+      else if (averageValue >= 12000 && averageValue < 15000){ GAIN = AS7341_GAIN_4X; ASTEP = 299; ATIME = 29;// Set the highest gain
+        }
+      else {GAIN = AS7341_GAIN_1X; ASTEP = 199; ATIME = 29;
+        }
+      return GAIN;
+}
 // // TO DO - ISSUE 18 - RAW COUNTS TO BASIC COUNTS
 // add conversion of raw values to basic counts - this factors in gain and integration
 
@@ -743,7 +776,6 @@ static void GAINMSG(ose_bundle osevm)
 ////////////////////////////////////////////////////////////
 // ad hoc network callbacks
 ////////////////////////////////////////////////////////////
-
 void handleRoot()
 {   
     // String s = index_html;
@@ -988,17 +1020,23 @@ void setup()
         pinMode(DL_PIN_BUILTIN_LED, OUTPUT);
     }
 
+
     // Initialize builtin LED
     {
         digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
         ledstate = LOW;
+       // FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
+      //  leds[0] = CRGB(5,0,0);
+      //  FastLED.show();
     }
 
     // If the button is pressed, boot into ad hoc mode and
     // serve a webpage with configuration options,
     // otherwise, boot into normal client mode.
     if(digitalRead(DL_PIN_BUTTON1) == LOW)
-    {
+    {  // leds[0] = CRGB(50,50,50);
+       // FastLED.show();
+       // adhoc = true;
         dl_boot_adhoc();
         adhoc = true;
     }
@@ -1088,11 +1126,17 @@ void setup()
             // Set the RTC for a MAX31343
             tm dt = tm(t2);  /// this part needs help adjusting. generates declaration error
             rtc.set_time(dt); // See time example on setting
+           // leds[0] = CRGB(0,0,10);
+           // FastLED.show();
+          //  delay(500);
 
             #else
              // Set the RTC for DS3231
             DateTime dt(t2);
             rtc.adjust(dt);
+          //  leds[0] = CRGB(0,0,10);
+          //  FastLED.show();
+          //  delay(500);
             #endif
 
         }
@@ -1142,6 +1186,8 @@ void loop()
             struct color color = getColor(); // actual sensor reading
             uint32_t rtc_now_unixtime = dl_now_unixtime();
             uint32_t sys_now_unixtime = time(NULL);
+            averageValue = color.values[10];
+            GAIN = AutoGAIN();
             #ifdef RTC_MAX31343
             rtc.get_temp(rtc_temp);
             #else
@@ -1191,8 +1237,8 @@ void loop()
                     } else
                         // end of the AWS reconnection function
                     {
-                        char jsonbuf[2048];
-                        formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 2048);
+                        char jsonbuf[4096];
+                        formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 4096);
                         publishMessage(jsonbuf); //sends to data topic as defined by getUUID
               
                         Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
