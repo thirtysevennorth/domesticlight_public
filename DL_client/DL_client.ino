@@ -7,7 +7,7 @@
 // For initial set-up boot into ADHOC mode by pressing and holding Button 1 (Left Button), 
 // while pressing and releasing the RESET Button (Right Button). The device will boot into "ADHOC MODE"
 // on a computer or phone look for the WIFI Network "DomesticLight". Connect to it via wifi.
-// then using a browser go to https://192.168.4.1. 
+// then using a browser go to http://192.168.4.1. 
 // Enter the following : the Device "UUID" from the box (a 6 digit number), 
 // your local WIFI network SSID, and its password.
 // You can also optionally configure local OSC transmission of the data.
@@ -44,10 +44,10 @@
 #include <pgmspace.h>
 #include <MicrOSCriptESP32.h>
 #include <Wire.h>
+#include <FastLED.h> // LED library for color changing WS2812B
 
 #ifdef RTC_MAX31343
 #include "MAX31343.h" // this is from the <AnalogRTClib> Arduino library. make the corrections noted to fix the directory error in the header file.
-// #include <FastLED.h>
 #else
 #include <RTClib.h>
 #endif
@@ -153,13 +153,14 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 #define DS3231_ADDRESS 0x68
 #endif
 
-// LED production and prototype led use
-//#define LED_TYPE     WS2812B
-//#define NUM_LEDS   1
-//#define BRIGHTNESS  20
-//#define DATA_PIN     DL_PIN_RGB_LED
+// FastLED library definitions for production and prototype board use
+#define LED_TYPE WS2812B
+#define NUM_LEDS 1
+#define BRIGHTNESS 20
+#define DATA_PIN DL_PIN_RGB_LED
 // Define the array of leds
-//CRGB leds[NUM_LEDS];
+CRGB leds[NUM_LEDS];
+
 ////////////////////////////////////////////////////////////
 // classes and globals
 ////////////////////////////////////////////////////////////
@@ -190,12 +191,12 @@ static Preferences prefs;
 static uint8_t ATIME = 29; // sets variables for light sensor config
 static uint16_t ASTEP = 599;
 static as7341_gain_t GAIN = AS7341_GAIN_64X;
+static uint16_t averageValue = 8000;
  
 
 // DATA COLLECTION FREQUENCY
 static int dataFrequency = 5; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
 static int sampleCounter = 0;
-static uint16_t averageValue = 8000;
 
 // used to decide what to do in the loop depending on whether
 // we're in config mode or not. this gets set if button 1 is
@@ -239,7 +240,7 @@ static char macaddrstr[MACADDRSTR_SIZE];
 #define UUID_SIZE 1024
 static String uuid;
 
-#define JSONBUF_SIZE 4096
+#define JSONBUF_SIZE 2048
 static char jsonbuf[JSONBUF_SIZE];
 
 // this is so that we can return a list from a function for the color sensor
@@ -262,7 +263,7 @@ void formatJSON(struct color color,
                 char *buf,
                 size_t buflen)
 {
-    StaticJsonDocument<2048> doc;
+    StaticJsonDocument<2000> doc;
     
     doc["MAC_ID"] =  macaddrstr;   //macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5];  //remove if UUID will work.
     doc["F1_415"] = color.values[0];
@@ -319,6 +320,8 @@ AWS_IOT_SUBSCRIBE_TOPIC = dlSubscribe;
 Serial.print("Subscribe topic defined as: ");
 Serial.println(AWS_IOT_SUBSCRIBE_TOPIC);
 
+leds[0] = CRGB(10,10,10); // pale white to show AWS success
+FastLED.show();
 // TO DO ADD FUTURE DEVICE SHADOW TOPIC SETTING HERE
 }
 
@@ -402,6 +405,8 @@ void connectAWS()
     Serial.println(AWS_IOT_PUBLISH_TOPIC.c_str());
     // Serial.println(AWS_IOT_SHADOWUPDATE_TOPIC);
     // Serial.println(AWS_IOT_SHADOWGET_TOPIC);
+    leds[0] = CRGB(20,30,0); // brighter reddish green to show AWSconnect
+    FastLED.show();
     
 }
 #endif
@@ -411,6 +416,8 @@ void connectAWS()
 boolean reconnectAWS() {
   if (!client.connected()) {
      Serial.print("Attempting to restore AWS connection...");
+     leds[0] = CRGB(20,0,0); // red to show aws connect error
+     FastLED.show();
      if (client.connect(THINGNAME.c_str())) {
       Serial.println("reconnected to AWS");
     // Once connected, publish an announcement...
@@ -421,6 +428,8 @@ boolean reconnectAWS() {
     client.publish(AWS_IOT_SUBSCRIBE_TOPIC.c_str(), "sensor back online:");
     }
      else {Serial.print("failed, rc=");
+     leds[0] = CRGB(100,0,0); // bright red to show aws connect fail
+     FastLED.show();
      // Serial.print(client.state());
       }
       
@@ -471,21 +480,39 @@ void isr_rtc_sqw()
 ////////////////////////////////////////////////////////////
 
 int toggleLED(void)
-{
+{if(adhoc_mode == true) {
     if(ledstate == HIGH)
     {
         ledstate = LOW;
-      //  leds[0] = CRGB(0,0,0);
-      //  FastLED.show();
+        leds[0] = CRGB(20,20,20);
+        FastLED.show();
     }
     else
     {
     	ledstate = HIGH;
-     // leds[0] = CRGB(0,0,5);
-    //  FastLED.show();
+      leds[0] = CRGB(50,50,50); //white to show adhoc
+      FastLED.show();
     }
     digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
+    }
+
+  else {if(ledstate == HIGH)
+    {
+        ledstate = LOW;
+        leds[0] = CRGB::Black;
+        FastLED.show();
+    }
+    else
+    {
+    	ledstate = HIGH;
+      leds[0] = CRGB(0,0,5); //dim flash to show read
+      FastLED.show();
+    }
+    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    return ledstate;
+    }
+
 }
 
 ////////////////////////////////////////////////////////////
@@ -527,8 +554,6 @@ static uint32_t dl_now_unixtime(void)
     if(dl_rtc_online)
     {
         return rtc.now().unixtime();
-        Serial.print("DS3231 RTC _ONLINE: ");
-        Serial.println(dl_rtc_online);
     }
     else
     {
@@ -559,38 +584,30 @@ static bool rtc_init(int rtc_square_wave_pin)
 
     int r = rtc.get_time(&rtc_ctime);
     printDeviceTime();
-    //g_stat.bits.a1f;
-   // if(r == 0){
-   //     write_i2c_register(MAX31343_I2C_ADDRESS, 0x0e, 0);
-   // }
-   // else
-   // {
-   //     Serial.printf("couldn't start RTC\n");
-   //     return false;
-   // }
-
-    // working on defining rtc_lost power  WHAT WE NEED IS THE BOOLEAN RETURN OF get_status.stat.bits.pfail
-  // const char* p2fail;
-  // p2fail = rtc.get_status(stat.bits.pfail()); //see MAX31343.CPP line 166 for defintion.   uint8_t val8;
- //  rtc_lost_power = p2fail();
-   return true;            //rtc.get_status.stat.bits.pfail(); //rtc.get_status()* @brief  Read status byte  @param[out]   stat: Decoded status byte @returns      0 on success, negative error code on failure.
+    //to do add RTC power fail code
+    // /rtc.get_status.stat.bits.pfail(); 
+    //rtc.get_status()* @brief  Read status byte  @param[out]   stat: Decoded status byte @returns      0 on success, negative error code on failure.
+   return true;            
       
 }
 
 // MAX31343 version DLNOW UNIXTIME
 static uint32_t dl_now_unixtime(void)
-{  // Serial.print("RTC update (1=success): ");
+{  // Serial.print("RTC update (1=success): ");  // for testing
    // Serial.println(dl_rtc_online);
     if(dl_rtc_online)
     { 
       // struct tm rtc_ctime;
       int ret = rtc.get_time(&rtc_ctime);
       return mktime(&rtc_ctime);
+      Serial.print("RTC _NTP update success: ");
+      Serial.println(dl_rtc_online);
     }
     else
     {
         // Fall back to the system clock
         return time(NULL);  // uses NTP time library
+        Serial.print("TIME UPDATE FAILED - using system clock");
     }
 }
 //// END MAX31343 RTC Version /////////////////////
@@ -728,9 +745,11 @@ static void GAINMSG(ose_bundle osevm)
     pushGAINMsg(vm_s, GAIN);
 }
 
+// autogain function changes gain and astep and atime in relation to visible light intensity. 
+// called from loop where averageValue is set to equal most recent visible light intensity
 static as7341_gain_t AutoGAIN()
 {
-      //averageValue = color.values[10]; //sets visible light as autogain source
+      
       if (averageValue < 200) {
       GAIN = AS7341_GAIN_256X; ASTEP = 4000; ATIME = 200;// Set the lowest gain 
        } 
@@ -776,6 +795,7 @@ static as7341_gain_t AutoGAIN()
 ////////////////////////////////////////////////////////////
 // ad hoc network callbacks
 ////////////////////////////////////////////////////////////
+
 void handleRoot()
 {   
     // String s = index_html;
@@ -791,10 +811,13 @@ void handleRoot()
           
     String s = buf;
     server.send(200, "text/html", s);
+    leds[0] = CRGB(100,100,100); // bright white to show entered adhoc mode
+    FastLED.show();
 }
 
 void handleGetColor()
-{
+{   leds[0] = CRGB(80,80,80); // slightly dimmer white to show adhoc color read
+    FastLED.show(); 
     struct color c = getColor();
     char buf[512];
     static int32_t counter;
@@ -804,7 +827,9 @@ void handleGetColor()
              c.values[6], c.values[7], c.values[8],
              c.values[9], c.values[10], c.values[11]);
     String s = buf;
-    server.send(200, "text/plain", s); 
+    server.send(200, "text/plain", s);
+    leds[0] = CRGB(100,100,100); // bright white to show entered adhoc mode
+    FastLED.show(); 
 }
 
 void handleGet()
@@ -845,6 +870,9 @@ void handleGet()
         Serial.printf("%s: Send OSC: false\n", __func__);
     }
     prefs.end();
+    leds[0] = CRGB(0,100,0); // bright green flash to show adhoc mode success
+    FastLED.show();
+    delay(1000);
     ESP.restart();
 }
 
@@ -934,6 +962,8 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
     Serial.printf("Visit %s with a browser "
                   "to configure this device.\n",
                   adhoc_ipaddr.toString().c_str());
+    leds[0] = CRGB(100,100,100); // white to show adhoc mode
+    FastLED.show();
 }
 
 ///// DL BOOT CLIENT. CALLED FROM SETUP
@@ -944,6 +974,9 @@ void dl_boot_client(void)
     // preferences.
     Serial.printf("Starting up...\n");
     adhoc_mode = false;
+    leds[0] = CRGB(20,0,0); // red startup
+    FastLED.show();
+    delay(200);
 
 #ifdef DL_INIT    
     prefs.begin("dl", false); // false => r/w
@@ -969,6 +1002,8 @@ void dl_boot_client(void)
         Serial.printf("Listening for OSC on UDP port %d\n",
                       o.udpPort());
         dl_bind_OSC_functions();
+        leds[0] = CRGB(20,20,0); // red-green to show wifi connect
+        FastLED.show();
     }
     else
     {
@@ -977,6 +1012,8 @@ void dl_boot_client(void)
                       "in order to configure this device to "
                       "connect to your WiFi network.\n");
         Serial.printf("Rebooting in 5 sec...\n");
+        leds[0] = CRGB(50,0,0); // red error to show no connect
+        FastLED.show();
         delay(5000);
         ESP.restart();
     }
@@ -995,7 +1032,7 @@ void dl_boot_client(void)
 
 void setup()
 {
-    bool adhoc = false;
+    bool adhoc_mode = false;
     // Lookup MAC address and format it
     {
         WiFi.macAddress(macaddr);
@@ -1020,23 +1057,25 @@ void setup()
         pinMode(DL_PIN_BUILTIN_LED, OUTPUT);
     }
 
-
     // Initialize builtin LED
     {
         digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
         ledstate = LOW;
-       // FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
-      //  leds[0] = CRGB(5,0,0);
-      //  FastLED.show();
+        FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
+        leds[0] = CRGB(5,0,0);
+        FastLED.show();
     }
 
     // If the button is pressed, boot into ad hoc mode and
     // serve a webpage with configuration options,
     // otherwise, boot into normal client mode.
     if(digitalRead(DL_PIN_BUTTON1) == LOW)
-    
-    {   dl_boot_adhoc();
-        adhoc = true;
+    {   adhoc_mode = true;
+        dl_boot_adhoc();
+        adhoc_mode = true;
+        leds[0] = CRGB(50,50,50);
+        FastLED.show();
+        delay(1000);
     }
     else
     {
@@ -1063,7 +1102,7 @@ void setup()
     // and then immediately set the RTC to the new
     // value. This should synchronize the RTC with the
     // system clock reasonably well.
-    if(adhoc == false)
+    if(adhoc_mode == false)
     {
         Serial.printf("Setting the system clock...");
         const int timeout_sec = 30;
@@ -1124,18 +1163,17 @@ void setup()
             // Set the RTC for a MAX31343
             tm dt = tm(t2);  /// this part needs help adjusting. generates declaration error
             rtc.set_time(dt); // See time example on setting
-           // leds[0] = CRGB(0,0,10);
-           // FastLED.show();
-          //  delay(500);
+
 
             #else
              // Set the RTC for DS3231
             DateTime dt(t2);
             rtc.adjust(dt);
-          //  leds[0] = CRGB(0,0,10);
-          //  FastLED.show();
-          //  delay(500);
             #endif
+          // show greenish blue flash to indicate clock set success
+          leds[0] = CRGB(0,20,30); 
+          FastLED.show();
+          delay(1000);
 
         }
 #endif
@@ -1154,12 +1192,20 @@ void setup()
             as7341.startReading();
             light_sensor_online = true;
             Serial.printf("done.\n");
+            leds[0] = CRGB(0,0,40); // blue flash to show light sensor online 
+            FastLED.show();
+            delay(1000);
+            leds[0] = CRGB(0,0,0);
+            FastLED.show();
         }
         else
         {
             // Can't initialize the light sensor.  Need to
             // strategize about what to do if this happens.
             Serial.printf("failed.\n");
+            leds[0] = CRGB(100,0,40); // red flash to show light sensor is not working 
+            FastLED.show();
+            delay(1000);
         }
     }
 }
@@ -1184,13 +1230,13 @@ void loop()
             struct color color = getColor(); // actual sensor reading
             uint32_t rtc_now_unixtime = dl_now_unixtime();
             uint32_t sys_now_unixtime = time(NULL);
-            averageValue = color.values[10];
-            GAIN = AutoGAIN();
             #ifdef RTC_MAX31343
             rtc.get_temp(rtc_temp);
             #else
             float rtc_temp = rtc.getTemperature();
             #endif
+            averageValue = color.values[10];
+            GAIN = AutoGAIN();
             uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
             int should_perform = sampleCounter == 0;
             sampleCounter = (sampleCounter + 1) % dataFrequency;
@@ -1235,8 +1281,8 @@ void loop()
                     } else
                         // end of the AWS reconnection function
                     {
-                        char jsonbuf[4096];
-                        formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 4096);
+                        char jsonbuf[2048];
+                        formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 2048);
                         publishMessage(jsonbuf); //sends to data topic as defined by getUUID
               
                         Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
