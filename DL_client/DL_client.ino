@@ -7,9 +7,8 @@
 // For initial set-up boot into ADHOC mode by pressing and holding Button 1 (Left Button), 
 // while pressing and releasing the RESET Button (Right Button). The device will boot into "ADHOC MODE"
 // on a computer or phone look for the WIFI Network "DomesticLight". Connect to it via wifi.
-// then using a browser go to https://192.168.4.1. 
-// Enter the following : the Device "UUID" from the box (a 6 digit number), 
-// your local WIFI network SSID, and its password.
+// then using a browser go to HTTP://192.168.4.1
+// Enter your local WIFI network SSID, and its password which is saved locally on the sensor
 // You can also optionally configure local OSC transmission of the data.
 
 ///////////////////////////////////////////////////////////
@@ -32,8 +31,8 @@
 //// DEFINE THE RTC USED ///////////////////////////////
 // Production boards use MAX31343, prototypes use DS3231.
 //
-#define DS3231 // for PROTOTYPE SERIES 
-//#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
+// #define DS3231 // for PROTOTYPE SERIES 
+#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
 
 // END OF REQUIRED DEFINITIONS///////////////////////////
 
@@ -44,6 +43,7 @@
 #include <pgmspace.h>
 #include <MicrOSCriptESP32.h>
 #include <Wire.h>
+#include <FastLED.h> // LED library for color changing WS2812B
 
 #ifdef RTC_MAX31343
 #include "MAX31343.h" // this is from the <AnalogRTClib> Arduino library. make the corrections noted to fix the directory error in the header file.
@@ -135,15 +135,15 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 
 #define DL_PIN_RGB_LED 14 // (ADC2) LED is a WS2812B single data line. Connects to PIN IO14 / A4/ ADC2
 #define DL_PIN_BUILTIN_LED 13 // could change to  built in neopixel on pin 33 PIN_NEOPIXEL
-#define DL_HWSERIAL Serial2
+//#define DL_HWSERIAL Serial2
 #elif defined(UM_ESP32S3)
 #define DL_PIN_BUTTON1 17 // A0 (ADC2) DAC2  NOTE on artist proof and prototype boards IO17 and IO18 have labels reversed
 #define DL_PIN_BUTTON2 18 // A1 (ADC2) DAC1 NOTE on artist proof and prototype boards IO17 and IO18 have labels reversed
 #define DL_PIN_RTC_SQUARE_WAVE 3 // REV F and after pin is #3
 
-#define DL_PIN_RGB_LED 14 // A2 (ADC2) (ADC2) LED is a WS2812B single data line. Connects to PIN IO14 / A4
+#define DL_PIN_RGB_LED 14 // IO14 is large ws2812b LED on board, IO40 is UM3 builtin ws2812.
 #define DL_PIN_BUILTIN_LED 13
-#define DL_HWSERIAL Serial0
+// #define DL_HWSERIAL Serial0
 #else
 #error No pin definitions for this board!
 #endif
@@ -151,6 +151,14 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 #ifndef DS3231_ADDRESS
 #define DS3231_ADDRESS 0x68
 #endif
+
+// FastLED library definitions for production and prototype board use
+#define LED_TYPE WS2812B
+#define NUM_LEDS 1
+#define BRIGHTNESS 20
+#define DATA_PIN DL_PIN_RGB_LED
+// Define the array of leds
+CRGB leds[NUM_LEDS];
 
 ////////////////////////////////////////////////////////////
 // classes and globals
@@ -179,14 +187,15 @@ static Preferences prefs;
 
 
 // LIGHT SENSOR CONFIGURATION  
-static uint8_t ATIME = 29; // sets variables for light sensor config
-static uint16_t ASTEP = 599;
-static as7341_gain_t GAIN = AS7341_GAIN_64X;
- 
+uint8_t ATIME = 29; // sets variables for light sensor config
+uint16_t ASTEP = 599;
+as7341_gain_t GAIN = AS7341_GAIN_1X;
+uint16_t averageValue = 4000;
 
 // DATA COLLECTION FREQUENCY
-static int dataFrequency = 5; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
+static int dataFrequency = 3; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
 static int sampleCounter = 0;
+
 
 // used to decide what to do in the loop depending on whether
 // we're in config mode or not. this gets set if button 1 is
@@ -197,6 +206,7 @@ static bool adhoc_mode;
 static int rtc_lost_power; //currently production boards do not look for power loss
 static volatile int rtc_sqw_fell = 0;
 float rtc_temp = 0;
+long previoussysTime = 0;
 
 #define DL_NTP_UPDATE_PERIOD_SEC 86400 // 1 day
 
@@ -239,6 +249,12 @@ struct color
     uint16_t values[12];
 };
 
+uint16_t readings[12]; // duplicate unblocked for autogain
+
+unsigned long readingStartTime; // Variable to store the start time of the reading
+const unsigned long readingTimeout = 500; // Timeout duration in milliseconds (adjust this as needed)
+
+
 ////////////////////////////////////////////////////////////
 // JSON
 ////////////////////////////////////////////////////////////
@@ -253,7 +269,7 @@ void formatJSON(struct color color,
                 char *buf,
                 size_t buflen)
 {
-    StaticJsonDocument<2000> doc;
+    StaticJsonDocument<1024> doc;
     
     doc["MAC_ID"] =  macaddrstr;   //macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5];  //remove if UUID will work.
     doc["F1_415"] = color.values[0];
@@ -272,8 +288,8 @@ void formatJSON(struct color color,
     doc["unixtime"] = time;
     doc["RTCTemp"] = rtc_temp; //rtc temp in C dl_rtc_temp();
     doc["ATIME"] = ATIME; // using breaks AWS. causes a MQTT timeout for data and bricks serial communication
-    doc["ASTEP"] = ASTEP;  //AS7341 GAIN
-    doc["GAIN"] = GAIN; //AS7341 Integration time
+    doc["ASTEP"] = ASTEP;  //AS7341 ASTEP
+    doc["GAIN"] = GAIN; //AS7341 GAIN
     // TO DO - ADD PLACEHOLDERS FOR FUTURE VOC AND METHANE SENSORS
     serializeJson(doc, buf, buflen); // print to client
 }
@@ -310,6 +326,8 @@ AWS_IOT_SUBSCRIBE_TOPIC = dlSubscribe;
 Serial.print("Subscribe topic defined as: ");
 Serial.println(AWS_IOT_SUBSCRIBE_TOPIC);
 
+leds[0] = CRGB(10,10,10); // pale white to show AWS success
+FastLED.show();
 // TO DO ADD FUTURE DEVICE SHADOW TOPIC SETTING HERE
 }
 
@@ -393,6 +411,8 @@ void connectAWS()
     Serial.println(AWS_IOT_PUBLISH_TOPIC.c_str());
     // Serial.println(AWS_IOT_SHADOWUPDATE_TOPIC);
     // Serial.println(AWS_IOT_SHADOWGET_TOPIC);
+    leds[0] = CRGB(20,30,0); // brighter reddish green to show AWSconnect
+    FastLED.show();
     
 }
 #endif
@@ -402,6 +422,8 @@ void connectAWS()
 boolean reconnectAWS() {
   if (!client.connected()) {
      Serial.print("Attempting to restore AWS connection...");
+     leds[0] = CRGB(20,0,0); // red to show aws connect error
+     FastLED.show();
      if (client.connect(THINGNAME.c_str())) {
       Serial.println("reconnected to AWS");
     // Once connected, publish an announcement...
@@ -412,6 +434,8 @@ boolean reconnectAWS() {
     client.publish(AWS_IOT_SUBSCRIBE_TOPIC.c_str(), "sensor back online:");
     }
      else {Serial.print("failed, rc=");
+     leds[0] = CRGB(100,0,0); // bright red to show aws connect fail
+     FastLED.show();
      // Serial.print(client.state());
       }
       
@@ -462,17 +486,41 @@ void isr_rtc_sqw()
 ////////////////////////////////////////////////////////////
 
 int toggleLED(void)
-{
+{if(adhoc_mode == true) {
     if(ledstate == HIGH)
     {
         ledstate = LOW;
+        leds[0] = CRGB(20,20,20);
+        FastLED.show();
     }
     else
     {
     	ledstate = HIGH;
+      leds[0] = CRGB(50,50,50); //white to show adhoc
+      FastLED.show();
     }
     digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
+    }
+
+  else {if(ledstate == HIGH)
+    {
+        ledstate = LOW;
+        leds[0] = CRGB::Black;
+        FastLED.show();
+        Serial.println("LED OFF");
+    }
+    else
+    {
+    	ledstate = HIGH;
+       leds[0] = CRGB(0,0,5); //dim flash to show read
+       FastLED.show();
+       Serial.println("LED ON");
+    }
+    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    return ledstate;
+    }
+
 }
 
 ////////////////////////////////////////////////////////////
@@ -519,6 +567,7 @@ static uint32_t dl_now_unixtime(void)
     {
         // Fall back to the system clock
         return time(NULL);
+        Serial.print("DS3231 RTC NOT ONLINE, USING SYSTEM CLOCK: ");
     }
 }
 //// END DS3231 RTC Version /////////////////////
@@ -532,9 +581,10 @@ static bool rtc_init(int rtc_square_wave_pin)
 {
     // this is the RTC alarm
     //static sqw_out_freq_t SQW_OUT_FREQ_1HZ = 0;
+    pinMode(DL_PIN_RTC_SQUARE_WAVE, INPUT); 
     rtc.begin();
     rtc.set_square_wave_frequency(MAX31343::SQW_OUT_FREQ_1HZ);
-    pinMode(DL_PIN_RTC_SQUARE_WAVE, INPUT); 
+   // pinMode(DL_PIN_RTC_SQUARE_WAVE, INPUT); 
     digitalWrite(DL_PIN_RTC_SQUARE_WAVE, HIGH);
     //irq_enable(MAX31343::INTR_ID_PFAIL);
     //irq_enable(MAX31343::SQW_OUT_FREQ_1HZ)
@@ -543,38 +593,30 @@ static bool rtc_init(int rtc_square_wave_pin)
 
     int r = rtc.get_time(&rtc_ctime);
     printDeviceTime();
-    //g_stat.bits.a1f;
-   // if(r == 0){
-   //     write_i2c_register(MAX31343_I2C_ADDRESS, 0x0e, 0);
-   // }
-   // else
-   // {
-   //     Serial.printf("couldn't start RTC\n");
-   //     return false;
-   // }
-
-    // working on defining rtc_lost power  WHAT WE NEED IS THE BOOLEAN RETURN OF get_status.stat.bits.pfail
-  // const char* p2fail;
-  // p2fail = rtc.get_status(stat.bits.pfail()); //see MAX31343.CPP line 166 for defintion.   uint8_t val8;
- //  rtc_lost_power = p2fail();
-   return true;            //rtc.get_status.stat.bits.pfail(); //rtc.get_status()* @brief  Read status byte  @param[out]   stat: Decoded status byte @returns      0 on success, negative error code on failure.
+    //to do add RTC power fail code
+    // /rtc.get_status.stat.bits.pfail(); 
+    //rtc.get_status()* @brief  Read status byte  @param[out]   stat: Decoded status byte @returns      0 on success, negative error code on failure.
+   return true;            
       
 }
 
 // MAX31343 version DLNOW UNIXTIME
 static uint32_t dl_now_unixtime(void)
-{  Serial.print("RTC update (1=success): ");
-   Serial.println(dl_rtc_online);
+{  // Serial.print("RTC update (1=success): ");  // for testing
+   // Serial.println(dl_rtc_online);
     if(dl_rtc_online)
     { 
       // struct tm rtc_ctime;
       int ret = rtc.get_time(&rtc_ctime);
       return mktime(&rtc_ctime);
+      Serial.print("RTC _NTP update success: ");
+      Serial.println(dl_rtc_online);
     }
     else
     {
         // Fall back to the system clock
         return time(NULL);  // uses NTP time library
+        Serial.print("TIME UPDATE FAILED - using system clock");
     }
 }
 //// END MAX31343 RTC Version /////////////////////
@@ -634,6 +676,7 @@ static struct color getColor(void)
             Serial.printf("error reading color values\n");
         }
     }
+    // Serial.printf("%d\n",c.values[10]);
     return c;
 }
 
@@ -712,7 +755,132 @@ static void GAINMSG(ose_bundle osevm)
     pushGAINMsg(vm_s, GAIN);
 }
 
-
+// timeout check for reading
+bool readingTimeOutCheck()
+{
+// Check if the timeout duration has passed since the reading started
+  if (millis() - readingStartTime >= readingTimeout) {
+    return true; // Timeout occurred
+  }
+  return false; // Timeout not reached yet
+}
+// autogain function changes gain and astep and atime in relation to visible light intensity. 
+// called from loop where averageValue is set to equal most recent visible light intensity
+as7341_gain_t AutoGAIN()
+{
+      // autogain functionality needs to be redone to index a step at a time. switch statement indexed against gain 
+      // then move up / down one index point to 
+      // add code to delay LED after reading check LED state - if LEDstate is 1, toggle led, then get color.
+            // if led state is 0, get color then toggle led otherwise turn off led
+      uint16_t readings[12];
+        if (!as7341.readAllChannels(readings)) {Serial.println("Error reading all channels!");
+         averageValue = 5000;
+         return GAIN;
+         }
+             
+      // Serial.print("ADC4/Clear autogain basis    : ");
+      // Serial.println(readings[10]);
+      averageValue = readings[10];
+    
+      switch (GAIN) {
+      case AS7341_GAIN_0_5X:
+         {if (averageValue >= 3000 && averageValue < 10000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 299; ATIME = 29;
+           }
+           else if (averageValue >= 10000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 59; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_1X; ASTEP = 299; ATIME = 29;
+           }
+           break; 
+         }
+      case AS7341_GAIN_1X:
+         {if (averageValue >= 3000 && averageValue < 10000) {GAIN = AS7341_GAIN_1X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue >= 10000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 299; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+      case AS7341_GAIN_2X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_1X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 3000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+      case AS7341_GAIN_4X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 3000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+       case AS7341_GAIN_8X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 3000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+        case AS7341_GAIN_16X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 2000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+        case AS7341_GAIN_32X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 2000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+        case AS7341_GAIN_64X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 3000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+         case AS7341_GAIN_128X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 3000) {GAIN = AS7341_GAIN_256X; ASTEP = 599; ATIME = 29;
+           }
+           else {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+        case AS7341_GAIN_256X:
+         {if (averageValue >= 10000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
+           }
+           else if (averageValue < 3000) {GAIN = AS7341_GAIN_256X; ASTEP = 999; ATIME = 39;
+           }
+           else {GAIN = AS7341_GAIN_256X; ASTEP = 599; ATIME = 29;
+           }
+           break; 
+         }
+        }
+      as7341.setGain(GAIN);
+      as7341.setASTEP(ASTEP);
+      as7341.setATIME(ATIME);
+      // Serial.print("current gain: ");
+      // Serial.println(GAIN);
+      return GAIN;
+}
 // // TO DO - ISSUE 18 - RAW COUNTS TO BASIC COUNTS
 // add conversion of raw values to basic counts - this factors in gain and integration
 
@@ -759,10 +927,13 @@ void handleRoot()
           
     String s = buf;
     server.send(200, "text/html", s);
+    leds[0] = CRGB(100,100,100); // bright white to show entered adhoc mode
+    FastLED.show();
 }
 
 void handleGetColor()
-{
+{   leds[0] = CRGB(80,80,80); // slightly dimmer white to show adhoc color read
+    FastLED.show(); 
     struct color c = getColor();
     char buf[512];
     static int32_t counter;
@@ -772,7 +943,9 @@ void handleGetColor()
              c.values[6], c.values[7], c.values[8],
              c.values[9], c.values[10], c.values[11]);
     String s = buf;
-    server.send(200, "text/plain", s); 
+    server.send(200, "text/plain", s);
+    leds[0] = CRGB(100,100,100); // bright white to show entered adhoc mode
+    FastLED.show(); 
 }
 
 void handleGet()
@@ -813,6 +986,9 @@ void handleGet()
         Serial.printf("%s: Send OSC: false\n", __func__);
     }
     prefs.end();
+    leds[0] = CRGB(0,100,0); // bright green flash to show adhoc mode success
+    FastLED.show();
+    delay(1000);
     ESP.restart();
 }
 
@@ -902,6 +1078,8 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
     Serial.printf("Visit %s with a browser "
                   "to configure this device.\n",
                   adhoc_ipaddr.toString().c_str());
+    leds[0] = CRGB(100,100,100); // white to show adhoc mode
+    FastLED.show();
 }
 
 ///// DL BOOT CLIENT. CALLED FROM SETUP
@@ -912,6 +1090,9 @@ void dl_boot_client(void)
     // preferences.
     Serial.printf("Starting up...\n");
     adhoc_mode = false;
+    leds[0] = CRGB(20,0,0); // red startup
+    FastLED.show();
+    delay(200);
 
 #ifdef DL_INIT    
     prefs.begin("dl", false); // false => r/w
@@ -937,6 +1118,8 @@ void dl_boot_client(void)
         Serial.printf("Listening for OSC on UDP port %d\n",
                       o.udpPort());
         dl_bind_OSC_functions();
+        leds[0] = CRGB(20,20,0); // red-green to show wifi connect
+        FastLED.show();
     }
     else
     {
@@ -945,6 +1128,8 @@ void dl_boot_client(void)
                       "in order to configure this device to "
                       "connect to your WiFi network.\n");
         Serial.printf("Rebooting in 5 sec...\n");
+        leds[0] = CRGB(50,0,0); // red error to show no connection
+        FastLED.show();
         delay(5000);
         ESP.restart();
     }
@@ -963,7 +1148,7 @@ void dl_boot_client(void)
 
 void setup()
 {
-    bool adhoc = false;
+    bool adhoc_mode = false;
     // Lookup MAC address and format it
     {
         WiFi.macAddress(macaddr);
@@ -979,7 +1164,7 @@ void setup()
         Serial.begin(115200);
         // DL_HWSERIAL is UART 2, the TX/RX pins broken out
         // on the feather boards
-        DL_HWSERIAL.begin(115200);
+       // DL_HWSERIAL.begin(115200);
     }
 
     // Set up pins
@@ -992,15 +1177,21 @@ void setup()
     {
         digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
         ledstate = LOW;
+        FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
+        leds[0] = CRGB(5,0,0);
+        FastLED.show();
     }
 
     // If the button is pressed, boot into ad hoc mode and
     // serve a webpage with configuration options,
     // otherwise, boot into normal client mode.
     if(digitalRead(DL_PIN_BUTTON1) == LOW)
-    {
+    {   adhoc_mode = true;
         dl_boot_adhoc();
-        adhoc = true;
+        adhoc_mode = true;
+        leds[0] = CRGB(50,50,50);
+        FastLED.show();
+        delay(1000);
     }
     else
     {
@@ -1027,10 +1218,10 @@ void setup()
     // and then immediately set the RTC to the new
     // value. This should synchronize the RTC with the
     // system clock reasonably well.
-    if(adhoc == false)
+    if(adhoc_mode == false)
     {
         Serial.printf("Setting the system clock...");
-        const int timeout_sec = 30;
+        const int timeout_sec = 20;
         // We don't care about the timezone or DST--all
         // devices should use UTC.
         configTime(0, 0, dl_ntp_server1);
@@ -1086,14 +1277,19 @@ void setup()
             }
             #ifdef RTC_MAX31343
             // Set the RTC for a MAX31343
-            tm dt = tm(t2);  /// this part needs help adjusting. generates declaration error
+            tm dt = tm(t2);  /// this part needs help adjusting. 
             rtc.set_time(dt); // See time example on setting
+
 
             #else
              // Set the RTC for DS3231
             DateTime dt(t2);
             rtc.adjust(dt);
             #endif
+          // show greenish blue flash to indicate clock set success
+          leds[0] = CRGB(0,20,30); 
+          FastLED.show();
+          delay(1000);
 
         }
 #endif
@@ -1112,66 +1308,104 @@ void setup()
             as7341.startReading();
             light_sensor_online = true;
             Serial.printf("done.\n");
+            leds[0] = CRGB(0,0,40); // blue flash to show light sensor online 
+            FastLED.show();
+            delay(1000);
+            leds[0] = CRGB(0,0,0);
+            FastLED.show();
+            readingStartTime = millis();
         }
         else
         {
             // Can't initialize the light sensor.  Need to
             // strategize about what to do if this happens.
             Serial.printf("failed.\n");
+            leds[0] = CRGB(100,0,40); // red flash to show light sensor is not working 
+            FastLED.show();
+            delay(1000);
         }
     }
 }
 
 void loop()
 {
-    if(adhoc_mode)
-    {
-        server.handleClient();
-        yield();
-    }
+  if(adhoc_mode)
+  {
+      server.handleClient();
+      yield();
+  }
     else
-    {
-        if(rtc_sqw_fell)
-        {
-            ose_bundle vm_s = o.stack();
+    {  
+    /// test of code for a timeout flag for autogain adjustment outside of the blocking loop
+    // bool timeOutFlag = readingTimeOutCheck();  // setting timeout flag to adjust autotgain
+    //if(as7341.checkReadingProgress() || timeOutFlag ) {
+    // if (timeOutFlag) {
+    //  loop();
+    //  } //Recover/restart/retc.
+    // else {
+     //IMPORTANT: make sure readings is a uint16_t array of size 12, otherwise strange things may happen
+    // as7341.getAllChannels(readings);  //Calling this any other time may give you old data
+    // if (!as7341.readAllChannels(readings))
+    //  Serial.println("AS7341 Error reading all channels!");
+    // else
+    // Serial.println(readings[10]);
+    // averageValue = readings[10]; 
+    // AutoGAIN();
+   //  as7341.startReading();
+     //   }
+     //  }
+     if(readingTimeOutCheck) {
+       uint32_t sys_now_unixtime = time(NULL);
+       AutoGAIN();
+       // Serial.print("sqw wave fell: ");
+      //  Serial.println(rtc_sqw_fell); //rtc_sqw_fell is called by isr_rtc_sqw() which is the RTC interrrupt
+       int sqwstate = digitalRead(DL_PIN_RTC_SQUARE_WAVE);
+      // Serial.println(sqwstate);
+       // Serial.println(sys_now_unixtime); // set new sqw fell 
+       if (millis() - readingStartTime >= (1010)) {rtc_sqw_fell = 1; Serial.println("using millis counter");}
+     }
+    
+        if(rtc_sqw_fell) // this is the main action loop called on every falling square wave.
+        {   
+          ose_bundle vm_s = o.stack();
             
-            // add code to delay LED after reading check LED state - if LEDstate is 1, toggle led, then get color.
-            // if led state is 0, get color then toggle led
-            if (ledstate = 1) 
+          if (ledstate = 1) 
             {toggleLED();}
-            struct color color = getColor(); // actual sensor reading
-            uint32_t rtc_now_unixtime = dl_now_unixtime();
-            uint32_t sys_now_unixtime = time(NULL);
-            #ifdef RTC_MAX31343
-            rtc.get_temp(rtc_temp);
-            #else
-            float rtc_temp = rtc.getTemperature();
-            #endif
-            uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
-            int should_perform = sampleCounter == 0;
-            sampleCounter = (sampleCounter + 1) % dataFrequency;
-            // Serial.printf("sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
-            //               sampleCounter, dataFrequency, should_perform);
-            client.loop(); // check for any incoming message
-            if(ntp_sec_counter == 0)
+          Serial.println("starting color read");
+          //AutoGAIN(); // adjust gain to avoid saturation
+          struct color color = getColor(); // actual sensor reading
+          Serial.println("color read complete");
+          uint32_t rtc_now_unixtime = dl_now_unixtime();
+          uint32_t sys_now_unixtime = time(NULL);
+          #ifdef RTC_MAX31343
+           rtc.get_temp(rtc_temp);
+          #else
+          float rtc_temp = rtc.getTemperature();
+          #endif
+          //averageValue = color.values[10]; // vis light value for auto gain
+         // AutoGAIN();  // autogain: still gets stuck on intense brightness changes that cause sensor saturation
+         uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
+         int should_perform = sampleCounter == 0;
+         sampleCounter = (sampleCounter + 1) % dataFrequency;
+            Serial.printf("sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
+                          sampleCounter, dataFrequency, should_perform);
+         client.loop(); // check for any incoming message
+         if(ntp_sec_counter == 0)
             {
                 // A day has gone by, time to do an NTP update
                 Serial.printf("NTP Sync\n");
                 configTime(0, 0, dl_ntp_server1);
             }
-            rtc_sqw_fell = 0;
+         rtc_sqw_fell = 0; 
+         readingStartTime = millis(); // resets SQW interrupt flag
             // Serial.printf("0x%x, 0x%x\n",
             //               dl_now_unixtime(),
             //               sys_now_unixtime);
+         Serial.print("current gain: "); //prints current gain every second
+         Serial.println(GAIN);
 
-            if(should_perform)
+         if(should_perform) // this is transmit section that sends the current data to AWS. This happens based on the interval frequency
             {
-                {
-                    delay(250); // delay to allow for color reading to complete before LED comes on again
-                    toggleLED();
-                }
-
-                {
                     // send data to AWS here
                     // the 12 individual values from the color sensor
                     // can be accessed with color.values[0], ...,
@@ -1179,32 +1413,28 @@ void loop()
                     // makejson(jsonbuf, uuid, color, rtc_now_unixtime);
 
                     // first check to see if we are connected and then run the AWS reconnection function
-                    if (!client.connected()) {
-                        long now = millis();
-                        if (now - lastReconnectAttempt > 5000) {
-                            lastReconnectAttempt = now;
-                            // Attempt to reconnect using AWS connect function
-                            if (reconnectAWS()) {
-                                lastReconnectAttempt = 0;
+                if (!client.connected()) {
+                  long now = millis();
+                  if (now - lastReconnectAttempt > 5000) {
+                        lastReconnectAttempt = now;
+                         // Attempt to reconnect using AWS connect function
+                         if (reconnectAWS()) {
+                             lastReconnectAttempt = 0;
                             }
                         }
-                    } else
-                        // end of the AWS reconnection function
-                    {
-                        char jsonbuf[2048];
-                        formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 2048);
-                        publishMessage(jsonbuf); //sends to data topic as defined by getUUID
-              
-                        Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
-                        
-                        printDeviceTime(); // prints UTC time to serial
-
-  
-             
+                  } else
+                   // sends data to AWS assuming AWS connection
+                   {Serial.println("starting publication");  
+                    char jsonbuf[2048];
+                    formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 2048);
+                    publishMessage(jsonbuf); //sends to data topic as defined by getUUID
+                    Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
+                    printDeviceTime(); // prints UTC time and temp to serial
                     }
-                }
+                    toggleLED(); // data read and transmit complete. turn on LED
+                
             
-                if(oscsend)
+              if(oscsend)
                 {
                     // if the Send OSC checkbox was ticked, and we have
                     // an address and a port, send a bundle to them.
@@ -1218,8 +1448,9 @@ void loop()
                     ose_bundleAll(vm_s);
                     o.udpSendElemTo(oscipaddr, oscport, vm_s);
                     ose_clear(o.stack());
+                    Serial.println("sent OSC");
                 }
-            }
+            } // end of if should perform
         }
         if(o.serviceInterrupts())
         {
@@ -1233,6 +1464,7 @@ void loop()
             ose_clear(o.stack());
         }
         // HARDWARE SERIAL TIME SYNC TO SYNC DEVICES USING THE RX/TX PINS. ONLY FOR INITIAL CONFIG USE
+        // also uncomment HWSERIAL
         // if(DL_HWSERIAL.available() > 0)
         // {
         //     Serial.printf("Reading from DL_HWSERIAL\n");
@@ -1270,7 +1502,7 @@ void loop()
             o.eval();
             ose_clear(o.stack());
         }
-
+// Serial.println("end of loop");
         yield();
     }
 }
