@@ -1034,10 +1034,8 @@ void setup()
     // serve a webpage with configuration options,
     // otherwise, boot into normal client mode.
     if(digitalRead(DL_PIN_BUTTON1) == LOW)
-    {  // leds[0] = CRGB(50,50,50);
-       // FastLED.show();
-       // adhoc = true;
-        dl_boot_adhoc();
+    
+    {   dl_boot_adhoc();
         adhoc = true;
     }
     else
