@@ -68,7 +68,7 @@ h1 {text-align: center;
 
       <div class="myDiv">
       <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating. </p>
-       <p> If you need more help beyond this configuration page visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a></p>
+       <p> For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a></p>
       <h2><p>Your Sensor's Raw Color Values:<span id="colorvalue"> 0 </span></p></h2>
       <h2><p>Your Sensor's MAC Address:<span id="macaddress">%s</span> </p></h2>
       <h2><p>Your Sensor's Site ID: <span id="uuid">%s</span></p></h2> 
@@ -76,9 +76,11 @@ h1 {text-align: center;
 
        <p><h3>INSTRUCTIONS</h3></p>
       
-       <p> NETWORK: Enter the name or SSID your wireless network the sensor should connect to.<br>
-       <p> PASSWORD: Enter the password for the network. This is stored only on your device.</p>
-       <p> TO SAVE: Press SUBMIT to save this info. Then on the board press the "RESET" button (on the right hand side).</p>
+       <p> NETWORK:  Enter the name or SSID of your wireless network.</p>
+       <p> PASSWORD: Enter your wifi network password. This is stored only on your sensor and not shared.</p>
+       <p> TO SAVE:  Click SUBMIT to save this info. <br>
+           The board will flash green for 1 second if saved successfullly, then shutdown its wifi and restart. You can close this webpage.</p>
+       
       
       <form action="/get">
       
