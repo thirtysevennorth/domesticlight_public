@@ -189,9 +189,8 @@ static Preferences prefs;
 // LIGHT SENSOR CONFIGURATION  
 uint8_t ATIME = 29; // sets variables for light sensor config
 uint16_t ASTEP = 599;
-as7341_gain_t GAIN = AS7341_GAIN_64X;
-uint16_t averageValue = 8000;
-static int gain_value;
+as7341_gain_t GAIN = AS7341_GAIN_1X;
+uint16_t averageValue = 4000;
 
 // DATA COLLECTION FREQUENCY
 static int dataFrequency = 2; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
@@ -247,6 +246,12 @@ struct color
 {
     uint16_t values[12];
 };
+
+uint16_t readings[12]; // duplicate unblocked for autogain
+
+unsigned long readingStartTime; // Variable to store the start time of the reading
+const unsigned long readingTimeout = 500; // Timeout duration in milliseconds (adjust this as needed)
+
 
 ////////////////////////////////////////////////////////////
 // JSON
@@ -745,99 +750,119 @@ static void GAINMSG(ose_bundle osevm)
     pushGAINMsg(vm_s, GAIN);
 }
 
+// timeout check for reading
+bool readingTimeOutCheck()
+{
+// Check if the timeout duration has passed since the reading started
+  if (millis() - readingStartTime >= readingTimeout) {
+    return true; // Timeout occurred
+  }
+  return false; // Timeout not reached yet
+}
 // autogain function changes gain and astep and atime in relation to visible light intensity. 
 // called from loop where averageValue is set to equal most recent visible light intensity
 as7341_gain_t AutoGAIN()
 {
       // autogain functionality needs to be redone to index a step at a time. switch statement indexed against gain 
       // then move up / down one index point to 
+      // add code to delay LED after reading check LED state - if LEDstate is 1, toggle led, then get color.
+            // if led state is 0, get color then toggle led otherwise turn off led
+      uint16_t readings[12];
+        if (!as7341.readAllChannels(readings)) {Serial.println("Error reading all channels!");
+         averageValue = 4000;
+         return GAIN;
+         }
+             
+      Serial.print("ADC4/Clear autogain basis    : ");
+      Serial.println(readings[10]);
+      averageValue = readings[10];
     
       switch (GAIN) {
       case AS7341_GAIN_0_5X:
-         {if (averageValue >= 4000 && averageValue < 13000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 199; ATIME = 29;
+         {if (averageValue >= 1000 && averageValue < 5000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 299; ATIME = 29;
            }
-           else if (averageValue >= 13000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 59; ATIME = 29;
+           else if (averageValue >= 5000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 59; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_1X; ASTEP = 299; ATIME = 29;
            }
            break; 
          }
       case AS7341_GAIN_1X:
-         {if (averageValue >= 4000 && averageValue < 14000) {GAIN = AS7341_GAIN_1X; ASTEP = 299; ATIME = 29;
+         {if (averageValue >= 1000 && averageValue < 5000) {GAIN = AS7341_GAIN_1X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue >= 14000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 199; ATIME = 29;
+           else if (averageValue >= 5000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 299; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
       case AS7341_GAIN_2X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_1X; ASTEP = 299; ATIME = 29;
+         {if (averageValue >= 5000) {GAIN = AS7341_GAIN_1X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
       case AS7341_GAIN_4X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
        case AS7341_GAIN_8X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
         case AS7341_GAIN_16X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
         case AS7341_GAIN_32X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
         case AS7341_GAIN_64X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
          case AS7341_GAIN_128X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_256X; ASTEP = 599; ATIME = 29;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_256X; ASTEP = 599; ATIME = 29;
            }
            else {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
            }
            break; 
          }
         case AS7341_GAIN_256X:
-         {if (averageValue >= 14000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
            }
-           else if (averageValue < 4000) {GAIN = AS7341_GAIN_256X; ASTEP = 999; ATIME = 39;
+           else if (averageValue < 1000) {GAIN = AS7341_GAIN_256X; ASTEP = 999; ATIME = 39;
            }
            else {GAIN = AS7341_GAIN_256X; ASTEP = 599; ATIME = 29;
            }
@@ -847,6 +872,8 @@ as7341_gain_t AutoGAIN()
       as7341.setGain(GAIN);
       as7341.setASTEP(ASTEP);
       as7341.setATIME(ATIME);
+      Serial.print("current gain: ");
+      Serial.println(GAIN);
       return GAIN;
 }
 // // TO DO - ISSUE 18 - RAW COUNTS TO BASIC COUNTS
@@ -1189,7 +1216,7 @@ void setup()
     if(adhoc_mode == false)
     {
         Serial.printf("Setting the system clock...");
-        const int timeout_sec = 30;
+        const int timeout_sec = 20;
         // We don't care about the timezone or DST--all
         // devices should use UTC.
         configTime(0, 0, dl_ntp_server1);
@@ -1296,54 +1323,75 @@ void setup()
 
 void loop()
 {
-    if(adhoc_mode)
-    {
-        server.handleClient();
-        yield();
-    }
+  if(adhoc_mode)
+  {
+      server.handleClient();
+      yield();
+  }
     else
-    {
+    {  
+    /// test of code for a timeout flag for autogain adjustment outside of the blocking loop
+    // bool timeOutFlag = readingTimeOutCheck();  // setting timeout flag to adjust autotgain
+    //if(as7341.checkReadingProgress() || timeOutFlag ) {
+    // if (timeOutFlag) {
+    //  loop();
+    //  } //Recover/restart/retc.
+    // else {
+     //IMPORTANT: make sure readings is a uint16_t array of size 12, otherwise strange things may happen
+    // as7341.getAllChannels(readings);  //Calling this any other time may give you old data
+    // if (!as7341.readAllChannels(readings))
+    //  Serial.println("AS7341 Error reading all channels!");
+    // else
+    // Serial.println(readings[10]);
+    // averageValue = readings[10]; 
+    // AutoGAIN();
+   //  as7341.startReading();
+     //   }
+     //  }
+     if(readingTimeOutCheck) {
+       AutoGAIN();
+     }
+    
         if(rtc_sqw_fell)
-        {
-            ose_bundle vm_s = o.stack();
+        {   
+          ose_bundle vm_s = o.stack();
             
-            // add code to delay LED after reading check LED state - if LEDstate is 1, toggle led, then get color.
-            // if led state is 0, get color then toggle led otherwise turn off led
-            if (ledstate = 1) 
-             {toggleLED();}
+          if (ledstate = 1) 
+            {toggleLED();}
 
-            struct color color = getColor(); // actual sensor reading
-            uint32_t rtc_now_unixtime = dl_now_unixtime();
-            uint32_t sys_now_unixtime = time(NULL);
-            #ifdef RTC_MAX31343
-            rtc.get_temp(rtc_temp);
-            #else
-            float rtc_temp = rtc.getTemperature();
-            #endif
-            averageValue = color.values[10]; // vis light value for auto gain
-            AutoGAIN();  // autogain - this still needs work
-            uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
-            int should_perform = sampleCounter == 0;
-            sampleCounter = (sampleCounter + 1) % dataFrequency;
+          //AutoGAIN(); // adjust gain to avoid saturation
+          struct color color = getColor(); // actual sensor reading
+          uint32_t rtc_now_unixtime = dl_now_unixtime();
+          uint32_t sys_now_unixtime = time(NULL);
+          #ifdef RTC_MAX31343
+           rtc.get_temp(rtc_temp);
+          #else
+          float rtc_temp = rtc.getTemperature();
+          #endif
+          //averageValue = color.values[10]; // vis light value for auto gain
+         // AutoGAIN();  // autogain: still gets stuck on intense brightness changes that cause sensor saturation
+         uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
+         int should_perform = sampleCounter == 0;
+         sampleCounter = (sampleCounter + 1) % dataFrequency;
             // Serial.printf("sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
             //               sampleCounter, dataFrequency, should_perform);
-            client.loop(); // check for any incoming message
-            if(ntp_sec_counter == 0)
+         client.loop(); // check for any incoming message
+         if(ntp_sec_counter == 0)
             {
                 // A day has gone by, time to do an NTP update
                 Serial.printf("NTP Sync\n");
                 configTime(0, 0, dl_ntp_server1);
             }
-            rtc_sqw_fell = 0;
+         rtc_sqw_fell = 0;
             // Serial.printf("0x%x, 0x%x\n",
             //               dl_now_unixtime(),
             //               sys_now_unixtime);
 
-            if(should_perform)
+          if(should_perform)
             {
                 {
-                    delay(250); // delay to allow for color reading to complete before LED comes on again
-                    toggleLED();
+                  delay(250); // delay to allow for color reading to complete before LED comes on again
+                  toggleLED();
                 }
 
                 {
@@ -1354,30 +1402,27 @@ void loop()
                     // makejson(jsonbuf, uuid, color, rtc_now_unixtime);
 
                     // first check to see if we are connected and then run the AWS reconnection function
-                    if (!client.connected()) {
-                        long now = millis();
-                        if (now - lastReconnectAttempt > 5000) {
-                            lastReconnectAttempt = now;
-                            // Attempt to reconnect using AWS connect function
-                            if (reconnectAWS()) {
-                                lastReconnectAttempt = 0;
+                if (!client.connected()) {
+                  long now = millis();
+                  if (now - lastReconnectAttempt > 5000) {
+                        lastReconnectAttempt = now;
+                         // Attempt to reconnect using AWS connect function
+                         if (reconnectAWS()) {
+                             lastReconnectAttempt = 0;
                             }
                         }
-                    } else
-                        // end of the AWS reconnection function
-                    {    // Serial.println(averageValue);
-                         char jsonbuf[2048];
-                         formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 2048);
-                         publishMessage(jsonbuf); //sends to data topic as defined by getUUID
-                         Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
-                         printDeviceTime(); // prints UTC time to serial
-
-  
-             
+                  } else
+                   // sends data to AWS as else case of 
+                   {    
+                    char jsonbuf[2048];
+                    formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 2048);
+                    publishMessage(jsonbuf); //sends to data topic as defined by getUUID
+                    Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
+                    printDeviceTime(); // prints UTC time to serial
                     }
                 }
             
-                if(oscsend)
+              if(oscsend)
                 {
                     // if the Send OSC checkbox was ticked, and we have
                     // an address and a port, send a bundle to them.
@@ -1392,7 +1437,7 @@ void loop()
                     o.udpSendElemTo(oscipaddr, oscport, vm_s);
                     ose_clear(o.stack());
                 }
-            }
+            } // end of if should perform
         }
         if(o.serviceInterrupts())
         {
