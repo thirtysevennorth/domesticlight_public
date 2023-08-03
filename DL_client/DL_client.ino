@@ -196,6 +196,7 @@ uint16_t averageValue = 4000;
 static int dataFrequency = 3; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
 static int sampleCounter = 0;
 
+
 // used to decide what to do in the loop depending on whether
 // we're in config mode or not. this gets set if button 1 is
 // pressed during setup().
@@ -205,6 +206,7 @@ static bool adhoc_mode;
 static int rtc_lost_power; //currently production boards do not look for power loss
 static volatile int rtc_sqw_fell = 0;
 float rtc_temp = 0;
+long previoussysTime = 0;
 
 #define DL_NTP_UPDATE_PERIOD_SEC 86400 // 1 day
 
@@ -1311,6 +1313,7 @@ void setup()
             delay(1000);
             leds[0] = CRGB(0,0,0);
             FastLED.show();
+            readingStartTime = millis();
         }
         else
         {
@@ -1352,11 +1355,14 @@ void loop()
      //   }
      //  }
      if(readingTimeOutCheck) {
+       uint32_t sys_now_unixtime = time(NULL);
        AutoGAIN();
        Serial.print("sqw wave fell: ");
        Serial.println(rtc_sqw_fell); //rtc_sqw_fell is called by isr_rtc_sqw() which is the RTC interrrupt
        int sqwstate = digitalRead(DL_PIN_RTC_SQUARE_WAVE);
        Serial.println(sqwstate);
+       // Serial.println(sys_now_unixtime); // set new sqw fell 
+       if (millis() - readingStartTime >= (1050)) {rtc_sqw_fell = 1; Serial.println("using millis counter");}
      }
     
         if(rtc_sqw_fell) // this is the main action loop called on every falling square wave.
@@ -1390,7 +1396,8 @@ void loop()
                 Serial.printf("NTP Sync\n");
                 configTime(0, 0, dl_ntp_server1);
             }
-         rtc_sqw_fell = 0; // resets SQW interrupt flag
+         rtc_sqw_fell = 0; 
+         readingStartTime = millis(); // resets SQW interrupt flag
             // Serial.printf("0x%x, 0x%x\n",
             //               dl_now_unixtime(),
             //               sys_now_unixtime);
@@ -1421,6 +1428,7 @@ void loop()
                     publishMessage(jsonbuf); //sends to data topic as defined by getUUID
                     Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
                     printDeviceTime(); // prints UTC time and temp to serial
+                    // readingStartTime = millis();
                     }
                     toggleLED(); // data read and transmit complete. turn on LED
                 
