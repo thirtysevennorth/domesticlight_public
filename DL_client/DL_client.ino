@@ -797,7 +797,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
       case AS7341_GAIN_2X:
-         {if (averageValue >= 5000) {GAIN = AS7341_GAIN_1X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_1X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
            }
@@ -806,7 +806,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
       case AS7341_GAIN_4X:
-         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_2X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
            }
@@ -815,7 +815,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
        case AS7341_GAIN_8X:
-         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_4X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
            }
@@ -824,7 +824,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
         case AS7341_GAIN_16X:
-         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_8X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
            }
@@ -833,7 +833,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
         case AS7341_GAIN_32X:
-         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_16X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
            }
@@ -842,7 +842,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
         case AS7341_GAIN_64X:
-         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_32X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
            }
@@ -851,7 +851,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
          case AS7341_GAIN_128X:
-         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_64X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_256X; ASTEP = 599; ATIME = 29;
            }
@@ -860,7 +860,7 @@ as7341_gain_t AutoGAIN()
            break; 
          }
         case AS7341_GAIN_256X:
-         {if (averageValue >= 6000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
+         {if (averageValue >= 8000) {GAIN = AS7341_GAIN_128X; ASTEP = 599; ATIME = 29;
            }
            else if (averageValue < 1000) {GAIN = AS7341_GAIN_256X; ASTEP = 999; ATIME = 39;
            }
@@ -1373,8 +1373,8 @@ void loop()
          uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
          int should_perform = sampleCounter == 0;
          sampleCounter = (sampleCounter + 1) % dataFrequency;
-            // Serial.printf("sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
-            //               sampleCounter, dataFrequency, should_perform);
+            Serial.printf("sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
+                          sampleCounter, dataFrequency, should_perform);
          client.loop(); // check for any incoming message
          if(ntp_sec_counter == 0)
             {
@@ -1389,10 +1389,10 @@ void loop()
 
           if(should_perform)
             {
-                {
+                
                   delay(250); // delay to allow for color reading to complete before LED comes on again
                   toggleLED();
-                }
+                
 
                 {
                     // send data to AWS here
