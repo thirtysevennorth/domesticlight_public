@@ -193,7 +193,7 @@ as7341_gain_t GAIN = AS7341_GAIN_1X;
 uint16_t averageValue = 4000;
 
 // DATA COLLECTION FREQUENCY
-static int dataFrequency = 2; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
+static int dataFrequency = 3; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
 static int sampleCounter = 0;
 
 // used to decide what to do in the loop depending on whether
@@ -506,12 +506,14 @@ int toggleLED(void)
         ledstate = LOW;
         leds[0] = CRGB::Black;
         FastLED.show();
+        Serial.println("LED OFF");
     }
     else
     {
     	ledstate = HIGH;
        leds[0] = CRGB(0,0,5); //dim flash to show read
        FastLED.show();
+       Serial.println("LED ON");
     }
     digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
@@ -577,9 +579,10 @@ static bool rtc_init(int rtc_square_wave_pin)
 {
     // this is the RTC alarm
     //static sqw_out_freq_t SQW_OUT_FREQ_1HZ = 0;
+    pinMode(DL_PIN_RTC_SQUARE_WAVE, INPUT); 
     rtc.begin();
     rtc.set_square_wave_frequency(MAX31343::SQW_OUT_FREQ_1HZ);
-    pinMode(DL_PIN_RTC_SQUARE_WAVE, INPUT); 
+   // pinMode(DL_PIN_RTC_SQUARE_WAVE, INPUT); 
     digitalWrite(DL_PIN_RTC_SQUARE_WAVE, HIGH);
     //irq_enable(MAX31343::INTR_ID_PFAIL);
     //irq_enable(MAX31343::SQW_OUT_FREQ_1HZ)
@@ -1350,17 +1353,22 @@ void loop()
      //  }
      if(readingTimeOutCheck) {
        AutoGAIN();
+       Serial.print("sqw wave fell: ");
+       Serial.println(rtc_sqw_fell); //rtc_sqw_fell is called by isr_rtc_sqw() which is the RTC interrrupt
+       int sqwstate = digitalRead(DL_PIN_RTC_SQUARE_WAVE);
+       Serial.println(sqwstate);
      }
     
-        if(rtc_sqw_fell)
+        if(rtc_sqw_fell) // this is the main action loop called on every falling square wave.
         {   
           ose_bundle vm_s = o.stack();
             
           if (ledstate = 1) 
             {toggleLED();}
-
+          Serial.println("starting color read");
           //AutoGAIN(); // adjust gain to avoid saturation
           struct color color = getColor(); // actual sensor reading
+          Serial.println("color read complete");
           uint32_t rtc_now_unixtime = dl_now_unixtime();
           uint32_t sys_now_unixtime = time(NULL);
           #ifdef RTC_MAX31343
@@ -1382,19 +1390,13 @@ void loop()
                 Serial.printf("NTP Sync\n");
                 configTime(0, 0, dl_ntp_server1);
             }
-         rtc_sqw_fell = 0;
+         rtc_sqw_fell = 0; // resets SQW interrupt flag
             // Serial.printf("0x%x, 0x%x\n",
             //               dl_now_unixtime(),
             //               sys_now_unixtime);
 
-          if(should_perform)
+          if(should_perform) // this is transmit section that sends the current data to AWS. This happens based on the interval frequency
             {
-                
-                  delay(250); // delay to allow for color reading to complete before LED comes on again
-                  toggleLED();
-                
-
-                {
                     // send data to AWS here
                     // the 12 individual values from the color sensor
                     // can be accessed with color.values[0], ...,
@@ -1412,15 +1414,16 @@ void loop()
                             }
                         }
                   } else
-                   // sends data to AWS as else case of 
-                   {    
+                   // sends data to AWS assuming AWS connection
+                   {Serial.println("starting publication");  
                     char jsonbuf[2048];
                     formatJSON(color, rtc_now_unixtime, rtc_temp, uuid, jsonbuf, 2048);
                     publishMessage(jsonbuf); //sends to data topic as defined by getUUID
                     Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
-                    printDeviceTime(); // prints UTC time to serial
+                    printDeviceTime(); // prints UTC time and temp to serial
                     }
-                }
+                    toggleLED(); // data read and transmit complete. turn on LED
+                
             
               if(oscsend)
                 {
@@ -1436,6 +1439,7 @@ void loop()
                     ose_bundleAll(vm_s);
                     o.udpSendElemTo(oscipaddr, oscport, vm_s);
                     ose_clear(o.stack());
+                    Serial.println("sent OSC");
                 }
             } // end of if should perform
         }
@@ -1489,7 +1493,7 @@ void loop()
             o.eval();
             ose_clear(o.stack());
         }
-
+Serial.println("end of loop");
         yield();
     }
 }
