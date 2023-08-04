@@ -1,4 +1,5 @@
 # This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
+# REV 4 Aug 2023
 # Prerequisites
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
@@ -18,8 +19,8 @@ The following libraries can be installed through the Arduino Libraries Manager:
 
 ## Other Libraries
 
-Install MicrOSCript by cloning the library from this repository and
-placing it in your Arduino libraries folder. Be certain it is cloned recursively. 
+MicrOSCript: You can download the zip file for MicroOSCript in the DL Client folder OR for an up to date version clone the library from the MicroOSCrepository.
+Place it  in your Arduino libraries folder. Be certain it is cloned recursively. 
 (~/Documents/Arduino/libraries):
 
 [https://github.com/0Z3/MicrOSCript](https://github.com/0Z3/MicrOSCript)
@@ -41,7 +42,7 @@ __________________
 //    connect back to your local network - you should see data flowing over OSC if you enabled that.
 //    alternatively connect to it over serial using a usb-c cable a serial monitor and you will see the JSON data packet that looks something like this
 //    "F1_415":67,"F2_445":100,"F3_480":176,"F4_515":207,"F5_555":264, .....
-//  for more information about the data packet methdos see DL_Data_Schema
+//  for more information about the data packet methods see DL_Data_Schema
 
 // CODE CONFIGURATION NOTES
 // To enable AWS connections include #define AWS
@@ -52,11 +53,8 @@ __________________
 
 // TO DO / ROADMAP 
 // Provide on board approximate rough RGB conversion to print to local OSC.
-// Add support for the RGB LED color change in the production boards
 // Add wifi / power loss buffer code that will store data when wifi is not available. 
-// make status LED flash brightness adjustable 
-// add AWS Device Shadow functionallity to aid in buffer data management
-// add AGC - autogain control. Currently GAIN is fixed to 64x.
+// add AWS Device Shadow functionality to aid in buffer data management
 // provide support for connection to institutional wifi networks which require an X509 certificate. 
 // Provide support for ENS VOC and methane sensors
 // 
@@ -66,7 +64,6 @@ __________________
 // The wifi network selection does not reliably connect to wifi networks without a password.
 
 // The OSC message for current Unixtime does not transmit correctly to Isadora and generates an unknown value type
-// after a repeated wifi disconnects the reconnect sometimes sends a duplicate connection request and triggers a followup AWS disconnect "Reason": "DUPLICATE_CLIENTID"
 
 
 // LICENSES AND CREDITS 

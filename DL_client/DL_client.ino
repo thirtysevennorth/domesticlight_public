@@ -1,4 +1,4 @@
-// SEE README.MD file for more details, credits, license
+// SEE README.MD file for more details, credits, license. Rev 4 Aug 2023
 
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
 // AND SERVER credentials were stored in permanent memory.

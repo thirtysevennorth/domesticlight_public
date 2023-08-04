@@ -67,7 +67,7 @@ h1 {text-align: center;
    </header>
 
       <div class="myDiv">
-      <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating. </p>
+      <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating. rev04_08_23 </p>
        <p> For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a></p>
       <h2><p>Your Sensor's Raw Color Values:<span id="colorvalue"> 0 </span></p></h2>
       <h2><p>Your Sensor's MAC Address:<span id="macaddress">%s</span> </p></h2>
