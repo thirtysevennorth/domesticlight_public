@@ -31,7 +31,8 @@
 //// DEFINE THE RTC USED ///////////////////////////////
 // Production boards use MAX31343, prototypes use DS3231.
 //
-// #define DS3231 // for PROTOTYPE SERIES 
+
+//#define DS3231 // for PROTOTYPE SERIES 
 #define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
 
 // END OF REQUIRED DEFINITIONS///////////////////////////
@@ -193,7 +194,7 @@ as7341_gain_t GAIN = AS7341_GAIN_1X;
 uint16_t averageValue = 4000;
 
 // DATA COLLECTION FREQUENCY
-static int dataFrequency = 3; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
+static int dataFrequency = 5; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
 static int sampleCounter = 0;
 
 
@@ -787,6 +788,7 @@ as7341_gain_t AutoGAIN()
          {if (averageValue >= 3000 && averageValue < 10000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 299; ATIME = 29;
            }
            else if (averageValue >= 10000) {GAIN = AS7341_GAIN_0_5X; ASTEP = 59; ATIME = 29;
+
            }
            else {GAIN = AS7341_GAIN_1X; ASTEP = 299; ATIME = 29;
            }
@@ -1363,6 +1365,7 @@ void loop()
       // Serial.println(sqwstate);
        // Serial.println(sys_now_unixtime); // set new sqw fell 
        if (millis() - readingStartTime >= (1010)) {rtc_sqw_fell = 1; Serial.println("using millis counter");}
+
      }
     
         if(rtc_sqw_fell) // this is the main action loop called on every falling square wave.
@@ -1405,6 +1408,7 @@ void loop()
          Serial.println(GAIN);
 
          if(should_perform) // this is transmit section that sends the current data to AWS. This happens based on the interval frequency
+
             {
                     // send data to AWS here
                     // the 12 individual values from the color sensor
@@ -1502,7 +1506,9 @@ void loop()
             o.eval();
             ose_clear(o.stack());
         }
+
 // Serial.println("end of loop");
+
         yield();
     }
 }
