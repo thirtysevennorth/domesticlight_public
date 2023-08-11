@@ -23,7 +23,7 @@ header {
 p {
   color: black;
   padding-left: 50px;
-  text-justify: left;
+  text-align: left;
   background-color: whitesmoke;
 }
 
@@ -48,52 +48,48 @@ h1 {text-align: center;
   font-family: Helvetica;
   padding: 50px;
   padding-top: 20px;
-  padding-bottom: 10 px;
+  padding-bottom: 10px;
   margin: 0px;
   border: 5px firebrick;
 }
 </style>
-
+<title>DOMESTIC LIGHT WIFI CONFIG</title>
 </head>
 
 <body>
 
 <section class ="myContainer">
-   <title>DOMESTIC LIGHT</title>
-
    <header> 
    <h1><b>DOMESTIC LIGHT</b></h1>
    <h2>Sensor Configuration and Setup</h2> 
    </header>
 
-      <div class="myDiv">
-      <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating. rev04_08_23 </p>
-       <p> For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a></p>
-      <h2><p>Your Sensor's Raw Color Values:<span id="colorvalue"> 0 </span></p></h2>
-      <h2><p>Your Sensor's MAC Address:<span id="macaddress">%s</span> </p></h2>
-      <h2><p>Your Sensor's Site ID: <span id="uuid">%s</span></p></h2> 
+    <div class="myDiv">
+      <h3>Welcome to the Domestic Light project. Thanks so much for participating. </h3>
+      <p>For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a>. Rev 12 Aug 2023</p>
+      <h2>Your Sensor's Raw Color Values:<span id="colorvalue"> 0 </span></h2>
+      <h2>Your Sensor's MAC Address:<span id="macaddress">%s</span></h2>
+      <h2>Your Sensor's Site ID: <span id="uuid">%s</span></h2> 
        <hr>
-
-       <p><h3>INSTRUCTIONS</h3></p>
-      
+       
+       <h3>INSTRUCTIONS</h3>
        <p> NETWORK:  Enter the name or SSID of your wireless network.</p>
        <p> PASSWORD: Enter your wifi network password. This is stored only on your sensor and not shared.</p>
-       <p> TO SAVE:  Click SUBMIT to save this info. <br>
-           The board will flash green for 1 second if saved successfullly, then shutdown its wifi and restart. You can close this webpage.</p>
-       
-      
+       <p> TO SAVE:  Click "SUBMIT AND RESTART" to save this info. <br>
+           The board will flash green for 1 second if saved successfullly, then shutdown its wifi and restart. You can then close this webpage.</p>
+       <hr>
       <form action="/get">
       
-       <h3><p>NETWORK:&nbsp&nbsp&nbsp<input type="text" name="network" value="%s"></p></h3>
-       <h3><p>PASSWORD:&nbsp<input type="text" name="password" value="%s"></p></h3>
-       <hr>
-       <h3><p>SEND OSC?  <input type="checkbox" name="oscsend" value="Send OSC"> </p>
-       <p>OSC<br>TARGET IP:&nbsp&nbsp<input type="text" name="oscipaddr" value="%s"></p>
-       <p>PORT:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<input type="number" name="oscport" value="%d" min="1" max="65535"></p></h3>
+        <h3>NETWORK:&nbsp;&nbsp;&nbsp;<input type="text" name="network" value="%s"></h3>
+        <h3>PASSWORD:&nbsp;<input type="text" name="password" value="%s"></h3>
+        <hr><br>
+        <h3>SEND OSC?<input type="checkbox" name="oscsend" value="Send OSC"> </h3> 
+        <h3>OSC<br>TARGET IP:&nbsp;&nbsp;<input type="text" name="oscipaddr" value="%s"></h3>
+        <h3>PORT:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="number" name="oscport" value="%d" min="1" max="65535"></h3>
         <hr>
-        <input type="submit" value="submit">
-        </form></p><br>
-        </div>
+        <br><input type="submit" value="SUBMIT AND RESTART">
+        </form><br>
+      </div>
   </section>
 
     <script>

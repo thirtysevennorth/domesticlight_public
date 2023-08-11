@@ -1,11 +1,10 @@
-# This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
-# REV 4 Aug 2023 - MAX31343 build
+# This file is the client for the Domestic Light Sensor.
+# REV 4 Aug 2023
 This update address a bug in the RTC that causes some boards to stop working in bright sunlight.
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
 USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino to STORE SERVER CREDENTIALS IN PERM STORAGE.
 The code is for use with Artist Proof and Production (series 200xxx) version of the sensor using ESP32-S3 Feather boards (Adafruit and Unexpected Maker) and the MAX31343 RTC, and intended to be built using the Arduino IDE v 2.11 or later.
-
 __________________
 
 # INITIAL USER SETUP NOTES
@@ -13,7 +12,7 @@ __________________
   1) press and hold Button 1 (Left Button), while pressing and releasing Button 2/  RESET Button (Right Button).
   2)  release Button 1 - the device will boot into "ADHOC MODE"
   3)  on a computer or phone look for the WIFI Network "DomesticLight".
-  4)  Connect to it via wifi, and then using a browser go to https://192.168.4.1.
+  4)  Connect to it via wifi, and then using a browser go to http://192.168.4.1.
   5)  Enter the following : 
      * your local WIFI network SSID, and its password.
      * You can also optionally configure local OSC transmission of the data.
@@ -59,4 +58,4 @@ To test:
 * Adafruit RTCLib https://github.com/adafruit/RTClib MIT License Adafruit 2019
 * ArduinoJson  https://github.com/bblanchon/ArduinoJson Beniot BLANCHON MIT 2023
 * AnalogRTCLib  Copyright(C) Analog Devices Inc.
-* ESP32S3 and Arduino libraries by Espressif Systems.
+* ESP32S3 and Arduino libraries by Espressif Systems

@@ -1,6 +1,5 @@
 // secrets.h CONTAINS DEVICE CERTIFICATE INFO SET ON EACH DEVICE AT TIME OF "FACTORY" SETUP
 // IT IS NOT USED, INCLUDED OR CALLED DURING NORMAL USE.
-
 // ADD CERTIFICATE AND WIFI DETAILS IN LOCALLY NOT ON GITHUB
 
 // NOTE TO FUTURE USERS: To repurpose the DL_Client for other uses outside of Domestic Light include "secrets.h" in the main sketch,
@@ -23,12 +22,12 @@
 #include <pgmspace.h>
 
 #define SECRET
-#define THING_NAME "000000"     // 6 digit serial number CHANGE THIS FOR EACH BOARD. 
+#define THING_NAME 00200000"     // 6 digit serial number CHANGE THIS FOR EACH BOARD. 
 
-const char WIFI_SSID[] = "SSID";                   // place to include the setup wifi network
-const char WIFI_PASSWORD[] = "PASSWORD";           // this info will be erased by user at user setup 
+const char WIFI_SSID[] = "ssid";                   // place to include the setup wifi network
+const char WIFI_PASSWORD[] = "password";           // this info will be erased by user at user setup 
 
-const char AWS_IOT_ENDPOINT[] = "ENDPOINT.com";       //PROJECT AWS ENDPOINT. 
+const char AWS_IOT_ENDPOINT[] = "xxxx.amazonaws.com";       //PROJECT AWS ENDPOINT. 
  
 /// Amazon Root CA 1. DO NOT CHANGE. AWS FIXED ROOT CERTIFICATE.  
 static const char AWS_CERT_CA[] PROGMEM = R"EOF(
@@ -70,4 +69,5 @@ static const char AWS_CERT_PRIVATE[] PROGMEM = R"KEY(
 -----BEGIN RSA PRIVATE KEY-----
 
 -----END RSA PRIVATE KEY-----
+
 )KEY";
