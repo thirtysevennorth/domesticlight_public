@@ -1,4 +1,4 @@
-# This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
+// # This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
 # REV 4 Aug 2023
 # Prerequisites
 
@@ -45,11 +45,8 @@ __________________
 //  for more information about the data packet methods see DL_Data_Schema
 
 // CODE CONFIGURATION NOTES
-// To enable AWS connections include #define AWS
 // To adjust the light sensor gain and integration time, set in the Light Sensor config of the Global variables.
 // To set data collection frequency set the data frequency counter  in seconds. Please do not adjust unless asked.
-
-// To factory reset uncomment // #define DL_FACTORY_RESET. This will require the board to be reflashed with the DL_client_INIT sketch.
 
 // TO DO / ROADMAP 
 // Provide on board approximate rough RGB conversion to print to local OSC.
@@ -62,9 +59,7 @@ __________________
 // Currently the message handler does not correctly recieve or process messages from AWS 
 // If AWS connection is interupted, while the device is connected to serial the serial connection is lost and has to be re-enabled.
 // The wifi network selection does not reliably connect to wifi networks without a password.
-
 // The OSC message for current Unixtime does not transmit correctly to Isadora and generates an unknown value type
-
 
 // LICENSES AND CREDITS 
 // the DL_client was created for light sensor client of Domestic Light, a media art project by Ian Winters
