@@ -32,8 +32,8 @@
 // Production boards use MAX31343, prototypes use DS3231.
 //
 
-//#define DS3231 // for PROTOTYPE SERIES 
-#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
+#define DS3231 // for PROTOTYPE SERIES 
+//#define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
 
 // END OF REQUIRED DEFINITIONS///////////////////////////
 
@@ -142,7 +142,12 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 #define DL_PIN_BUTTON2 18 // A1 (ADC2) DAC1 NOTE on artist proof and prototype boards IO17 and IO18 have labels reversed
 #define DL_PIN_RTC_SQUARE_WAVE 3 // REV F and after pin is #3
 
+#ifdef DS3231
+#define DL_PIN_RGB_LED 40 // IO14 is large ws2812b LED on board, IO40 is UM3 builtin ws2812.
+#else
 #define DL_PIN_RGB_LED 14 // IO14 is large ws2812b LED on board, IO40 is UM3 builtin ws2812.
+#endif
+
 #define DL_PIN_BUILTIN_LED 13
 // #define DL_HWSERIAL Serial0
 #else
@@ -500,7 +505,7 @@ int toggleLED(void)
       leds[0] = CRGB(50,50,50); //white to show adhoc
       FastLED.show();
     }
-    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    //digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
     }
 
@@ -518,7 +523,7 @@ int toggleLED(void)
        FastLED.show();
        Serial.println("LED ON");
     }
-    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    //digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
     }
 
@@ -1315,6 +1320,7 @@ void setup()
             delay(1000);
             leds[0] = CRGB(0,0,0);
             FastLED.show();
+            digitalWrite(DL_PIN_BUILTIN_LED, 0);
             readingStartTime = millis();
         }
         else
