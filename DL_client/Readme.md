@@ -1,21 +1,21 @@
-// This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
-# REV 4 Aug 2023
-# Prerequisites
+# Domestic Light Sensor Client
+part of the larger Domestic Light project.
+## REV 4 Aug 2023
 
-## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
-## USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino to STORE SERVER CREDENTIALS IN PERM STORAGE.
+# Notes
+// SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
+// USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino to STORE SERVER CREDENTIALS IN PERM STORAGE.
+// The code is for use with ESP32-S3 Feather boards (Adafruit and Unexpected Maker), and intended to be built using the Arduino IDE v 2.1 or later.
 
-## The code is for use with ESP32-S3 Feather boards (Adafruit and Unexpected Maker), and intended to be built using the Arduino IDE v 2.1 or later.
-
-## Arduino Libraries
+## Required Libraries
 The following libraries can be installed through the Arduino Libraries Manager:
 
-- RTClib
+// RTClib
 - **** AnalogRTCLib *** NOTE for Production and Artist Proof boards:
                     the Analog Devices "AnalogRTCLib" has an incorrect
                     directory reference for the MAX31343 header file and must be edited for use. 
                     The corrected files are included in our repository as "MAX31343.h", "MAX31343.cpp", and "MAX31343_registers.h". Once corrected by Analog Devices  "AnalogRTCLib.h" should be used instead.
-- Adafruit_AS7341
+// Adafruit_AS7341
 
 ## Other Libraries
 
