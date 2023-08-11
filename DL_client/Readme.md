@@ -1,4 +1,4 @@
-// # This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
+// This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
 # REV 4 Aug 2023
 # Prerequisites
 
