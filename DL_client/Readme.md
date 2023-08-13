@@ -1,5 +1,5 @@
 # This file is the client for the Domestic Light Sensor.
-# REV 4 Aug 2023
+# REV 12 Aug 2023
 This update address a bug in the RTC that causes some boards to stop working in bright sunlight.
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 

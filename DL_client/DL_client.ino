@@ -1378,7 +1378,7 @@ void loop()
             
           if (ledstate = 1) 
             {toggleLED();}
-          Serial.println("starting color read");
+          Serial.println("starting color read. software date 12 Aug 2023");
           //AutoGAIN(); // adjust gain to avoid saturation
           struct color color = getColor(); // actual sensor reading
           Serial.println("color read complete");
