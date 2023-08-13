@@ -87,7 +87,7 @@ h1 {text-align: center;
         <h3>OSC<br>TARGET IP:&nbsp;&nbsp;<input type="text" name="oscipaddr" value="%s"></h3>
         <h3>PORT:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="number" name="oscport" value="%d" min="1" max="65535"></h3>
         <hr>
-        <h3><input type="submit" value="SUBMIT AND RESTART"></h3>
+        <br><input type="submit" value="SUBMIT AND RESTART">
         </form><br>
       </div>
   </section>
