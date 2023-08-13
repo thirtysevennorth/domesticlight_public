@@ -59,30 +59,33 @@ h1 {text-align: center;
 <body>
 
 <section class ="myContainer">
-   <title>DOMESTIC LIGHT INIT</title>
+   <title>DOMESTIC LIGHT</title>
 
    <header> 
-   <h1><b>DOMESTIC LIGHT INIT MODE</b></h1>
+   <h1><b>DOMESTIC LIGHT</b></h1>
    <h2>Sensor Configuration and Setup</h2> 
    </header>
 
       <div class="myDiv">
-      <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating. <br>
-       If you need more help beyond this configuration page please go to <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a></p>
+      <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating. rev04_08_23 </p>
+       <p> For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a></p>
       <h2><p>Your Sensor's Raw Color Values:<span id="colorvalue"> 0 </span></p></h2>
-      <h2><p>Sensor MAC Address:<span id="macaddress">%s</span> </p></h2>
-      <h2><p>Your Sensor and Site ID: <span id="uuid">%s</span></p></h2> 
+      <h2><p>Your Sensor's MAC Address:<span id="macaddress">%s</span> </p></h2>
+      <h2><p>Your Sensor's Site ID: <span id="uuid">%s</span></p></h2> 
        <hr>
 
        <p><h3>INSTRUCTIONS</h3></p>
       
-       <p> NETWORK: Enter the name or SSID your wireless network the sensor should connect to.<br>
-       <p> PASSWORD: Enter the password for the network. Note that at this time the sensor does not connect to unsecured networks. <br>
+       <p> NETWORK:  Enter the name or SSID of your wireless network.</p>
+       <p> PASSWORD: Enter your wifi network password. This is stored only on your sensor and not shared.</p>
+       <p> TO SAVE:  Click SUBMIT to save this info. <br>
+           The board will flash green for 1 second if saved successfullly, then shutdown its wifi and restart. You can close this webpage.</p>
+       
       
       <form action="/get">
       
-       <p>NETWORK:&nbsp&nbsp&nbsp<input type="text" name="network" value="%s"></p>
-       <p>PASSWORD:&nbsp<input type="text" name="password" value="%s"></p></h3>
+       <h3><p>NETWORK:&nbsp&nbsp&nbsp<input type="text" name="network" value="%s"></p></h3>
+       <h3><p>PASSWORD:&nbsp<input type="text" name="password" value="%s"></p></h3>
        <hr>
        <h3><p>SEND OSC?  <input type="checkbox" name="oscsend" value="Send OSC"> </p>
        <p>OSC<br>TARGET IP:&nbsp&nbsp<input type="text" name="oscipaddr" value="%s"></p>

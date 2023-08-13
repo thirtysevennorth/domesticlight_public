@@ -67,10 +67,10 @@ h1 {text-align: center;
    </header>
 
       <div class="myDiv">
-      <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating.</p>
+      <p><h3>Welcome to the Domestic Light project.</h3>Thanks so much for participating. rev04_08_23 </p>
        <p> For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a></p>
       <h2><p>Your Sensor's Raw Color Values:<span id="colorvalue"> 0 </span></p></h2>
-      <h2><p>Your Sensor's MAC Address:<span id="macaddress">%s</span></p></h2>
+      <h2><p>Your Sensor's MAC Address:<span id="macaddress">%s</span> </p></h2>
       <h2><p>Your Sensor's Site ID: <span id="uuid">%s</span></p></h2> 
        <hr>
 
@@ -81,6 +81,7 @@ h1 {text-align: center;
        <p> TO SAVE:  Click SUBMIT to save this info. <br>
            The board will flash green for 1 second if saved successfullly, then shutdown its wifi and restart. You can close this webpage.</p>
        
+      
       <form action="/get">
       
        <h3><p>NETWORK:&nbsp&nbsp&nbsp<input type="text" name="network" value="%s"></p></h3>
@@ -89,8 +90,8 @@ h1 {text-align: center;
        <h3><p>SEND OSC?  <input type="checkbox" name="oscsend" value="Send OSC"> </p>
        <p>OSC<br>TARGET IP:&nbsp&nbsp<input type="text" name="oscipaddr" value="%s"></p>
        <p>PORT:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<input type="number" name="oscport" value="%d" min="1" max="65535"></p></h3>
-        <hr><br>
-        <input type="submit" value="submit and restart">
+        <hr>
+        <input type="submit" value="submit">
         </form></p><br>
         </div>
   </section>
