@@ -1,11 +1,10 @@
-# This file is the client for the Domestic Light Sensor, part of the larger Domestic Light project.
+# This file is the client for the Domestic Light Sensor.
 # REV 4 Aug 2023 - DS3231 build
 This update address a bug in the RTC that causes some boards to stop working in bright sunlight.
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
 USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino to STORE SERVER CREDENTIALS IN PERM STORAGE.
-The code is for use with Prototype version of the sensor using ESP32-S3 Feather boards (Adafruit and Unexpected Maker) and the DS3231 RTC, and intended to be built using the Arduino IDE v 2.1 or later.
-
+The code is for use with Prototype version of the sensor using ESP32-S3 Feather boards (Adafruit and Unexpected Maker) and the DS3231 RTC.
 __________________
 
 # INITIAL USER SETUP NOTES

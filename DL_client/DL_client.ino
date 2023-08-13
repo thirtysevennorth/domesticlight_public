@@ -1,11 +1,11 @@
-// SEE README.MD file for more details, credits, license. Rev 4 Aug 2023
+// SEE README.MD file for more details, credits, license.
 
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
 // AND SERVER credentials were stored in permanent memory.
 
 // INITIAL SETUP NOTES
 // For initial set-up boot into ADHOC mode by pressing and holding Button 1 (Left Button), 
-// while pressing and releasing the RESET Button (Right Button). The device will boot into "ADHOC MODE"
+// while pressing and releasing the RESET Button (Right Button). The device will boot into ADHOC MODE
 // on a computer or phone look for the WIFI Network "DomesticLight". Connect to it via wifi.
 // then using a browser go to HTTP://192.168.4.1
 // Enter your local WIFI network SSID, and its password which is saved locally on the sensor
@@ -30,7 +30,6 @@
 ////////////////////////////////////////////////////////
 //// DEFINE THE RTC USED ///////////////////////////////
 // Production boards use MAX31343, prototypes use DS3231.
-//
 
 //#define DS3231 // for PROTOTYPE SERIES 
 #define RTC_MAX31343 //FOR PRODUCTION AND ARTIST PROOF SERIES
@@ -73,7 +72,6 @@
 
 #ifdef DL_AWS
 // #include "secrets.h" // do not use. left if a future user wants to adapt code to place credentials in sketch.  
-// rather than storing in preferences using an INIT sketch. 
 // To do so uncomment, and add credentials in the secrets.h file and change the calls to prefs to direct to secrets.h .
 #endif
 
@@ -915,7 +913,7 @@ as7341_gain_t AutoGAIN()
 ////////////////////////////////////////////////////////////
 
 void handleRoot()
-{   
+{   Serial.println("opened handleRoot");
     // String s = index_html;
     int len = strlen(index_html) + 512;
     char buf[len];
@@ -934,7 +932,8 @@ void handleRoot()
 }
 
 void handleGetColor()
-{   leds[0] = CRGB(80,80,80); // slightly dimmer white to show adhoc color read
+{   Serial.println("opened GETCOLOR");
+    leds[0] = CRGB(80,80,80); // slightly dimmer white to show adhoc color read
     FastLED.show(); 
     struct color c = getColor();
     char buf[512];
@@ -951,7 +950,7 @@ void handleGetColor()
 }
 
 void handleGet()
-{   // uuid being set at time of config now
+{   Serial.println("opened HANDLEGET");// uuid being set at time of config now
     if(server.hasArg("uuid") == true)
     {
         prefs.putString("uuid", server.arg("uuid"));
@@ -988,9 +987,10 @@ void handleGet()
         Serial.printf("%s: Send OSC: false\n", __func__);
     }
     prefs.end();
-    leds[0] = CRGB(0,100,0); // bright green flash to show adhoc mode success
+    leds[0] = CRGB(0,200,0); // bright green flash to show adhoc mode success
     FastLED.show();
-    delay(1000);
+    Serial.println("saved config info");
+    delay(1500);
     ESP.restart();
 }
 
@@ -1070,8 +1070,11 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
     prefs.clear();
 #endif
     getUUID();
+    WiFi.mode(WIFI_MODE_STA); 
+    delay(200);
     WiFi.softAP(adhoc_ssid, NULL);
     IPAddress adhoc_ipaddr = WiFi.softAPIP();
+    delay(200);
     server.on("/", handleRoot);
     server.on("/color", handleGetColor);
     server.on("/get", handleGet);
@@ -1082,6 +1085,7 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
                   adhoc_ipaddr.toString().c_str());
     leds[0] = CRGB(100,100,100); // white to show adhoc mode
     FastLED.show();
+    Serial.printf("in ad hoc mode...");
 }
 
 ///// DL BOOT CLIENT. CALLED FROM SETUP
@@ -1223,7 +1227,7 @@ void setup()
     if(adhoc_mode == false)
     {
         Serial.printf("Setting the system clock...");
-        const int timeout_sec = 20;
+        const int timeout_sec = 30;
         // We don't care about the timezone or DST--all
         // devices should use UTC.
         configTime(0, 0, dl_ntp_server1);

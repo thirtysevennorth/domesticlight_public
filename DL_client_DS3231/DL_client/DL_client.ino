@@ -1,15 +1,7 @@
-// SEE README.MD file for more details, credits, license. Rev 4 Aug 2023
+// SEE README.MD file for more details, credits, license. 
 
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
 // AND SERVER credentials were stored in permanent memory.
-
-// INITIAL SETUP NOTES
-// For initial set-up boot into ADHOC mode by pressing and holding Button 1 (Left Button), 
-// while pressing and releasing the RESET Button (Right Button). The device will boot into "ADHOC MODE"
-// on a computer or phone look for the WIFI Network "DomesticLight". Connect to it via wifi.
-// then using a browser go to HTTP://192.168.4.1
-// Enter your local WIFI network SSID, and its password which is saved locally on the sensor
-// You can also optionally configure local OSC transmission of the data.
 
 ///////////////////////////////////////////////////////////
 // Preferences setting and reset
@@ -920,7 +912,7 @@ as7341_gain_t AutoGAIN()
 ////////////////////////////////////////////////////////////
 
 void handleRoot()
-{   
+{   Serial.println("opened handleROOT");
     // String s = index_html;
     int len = strlen(index_html) + 512;
     char buf[len];
@@ -933,14 +925,13 @@ void handleRoot()
              prefs.getInt("oscport", 20000));
           
     String s = buf;
-    server.send(200, "text/html", s);
+    server.send(200, "text/html", s); // changed from s, //testing no cache
     leds[0] = CRGB(100,100,100); // bright white to show entered adhoc mode
     FastLED.show();
 }
 
 void handleGetColor()
-{   leds[0] = CRGB(80,80,80); // slightly dimmer white to show adhoc color read
-    FastLED.show(); 
+{   Serial.println("opened GETCOLOR");
     struct color c = getColor();
     char buf[512];
     static int32_t counter;
@@ -956,7 +947,11 @@ void handleGetColor()
 }
 
 void handleGet()
-{   // uuid being set at time of config now
+{  Serial.println("opened HANDLEGET"); // uuid being set at time of config now
+  //server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  //server.sendHeader("Pragma", "no-cache");
+  //server.sendHeader("Expires", "-1");
+  //server.setContentLength(CONTENT_LENGTH_UNKNOWN); //testing no cache
     if(server.hasArg("uuid") == true)
     {
         prefs.putString("uuid", server.arg("uuid"));
@@ -992,13 +987,26 @@ void handleGet()
         prefs.putBool("oscsend", false);
         Serial.printf("%s: Send OSC: false\n", __func__);
     }
+
     prefs.end();
+    Serial.println("saved config info");
     leds[0] = CRGB(0,100,0); // bright green flash to show adhoc mode success
     FastLED.show();
     delay(1000);
     ESP.restart();
 }
 
+//void handleRestart() // causes webpage to autosubmit when used
+//{ 
+//    prefs.end();
+//    leds[0] = CRGB(200,200,200); // bright green flash to show adhoc mode success
+//    FastLED.show();
+//    delay(1000);
+//    leds[0] = CRGB(0,0,0); // bright green flash to show adhoc mode success
+//    FastLED.show();
+ //   Serial.println("restarting");
+//    ESP.restart();
+//}
 
 // print device time at startup
 #ifdef RTC_MAX31343
@@ -1075,11 +1083,15 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
     prefs.clear();
 #endif
     getUUID();
+    WiFi.mode(WIFI_MODE_STA); 
+    delay(200);
     WiFi.softAP(adhoc_ssid, NULL);
     IPAddress adhoc_ipaddr = WiFi.softAPIP();
+    delay(200);
     server.on("/", handleRoot);
     server.on("/color", handleGetColor);
     server.on("/get", handleGet);
+   // server.on("/restart", handleRestart);
     server.begin();
     Serial.printf("ready.\n");
     Serial.printf("Visit %s with a browser "
@@ -1087,6 +1099,7 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
                   adhoc_ipaddr.toString().c_str());
     leds[0] = CRGB(100,100,100); // white to show adhoc mode
     FastLED.show();
+    Serial.printf("in ad hoc mode...");
 }
 
 ///// DL BOOT CLIENT. CALLED FROM SETUP

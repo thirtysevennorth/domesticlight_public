@@ -7,8 +7,8 @@
 
 // Choose  RTC. Production boards use MAX31343, prototypes use DS3231.
 // 
-#define DS3231
-//#define RTC_MAX31343
+ #define DS3231
+// #define RTC_MAX31343
 
 #ifdef RTC_MAX31343
 #include  "MAX31343.h" //<AnalogRTCLibrary.h> must place ed
@@ -85,7 +85,7 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 #define DL_PIN_BUTTON2 25 // A1 (ADC2) DAC1
 #define DL_PIN_RTC_SQUARE_WAVE 27
 
-#define DL_PIN_RGB_LED 14 // (ADC2) LED is a WS2812B single data line. Connects to PIN IO14 / A4/ ADC2
+#define DL_PIN_RGB_LED 40 // (ADC2) LED is a WS2812B single data line. Connects to PIN IO14 / A4/ ADC2
 #define DL_PIN_BUILTIN_LED 13 // could change to  built in neopixel on pin 33 PIN_NEOPIXEL
 #define DL_HWSERIAL Serial2
 #elif defined(UM_ESP32S3)
