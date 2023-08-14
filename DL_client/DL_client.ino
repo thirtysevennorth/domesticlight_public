@@ -24,8 +24,8 @@
 // DEFINE THE PROCESSOR IN USE
 // Processors supported are UM Feather S3 or Adafruit Feather S3. choose 1
 
-//#define ADAFRUIT_FEATHER_ESP32
-#define UM_ESP32S3
+#define ADAFRUIT_FEATHER_ESP32
+//#define UM_ESP32S3
 
 ////////////////////////////////////////////////////////
 //// DEFINE THE RTC USED ///////////////////////////////
@@ -128,12 +128,12 @@ static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted a
 ////////////////////////////////////////////////////////////
 
 #if defined(ADAFRUIT_FEATHER_ESP32)
-#define DL_PIN_BUTTON1 26 // A0 (ADC2) DAC2 
-#define DL_PIN_BUTTON2 25 // A1 (ADC2) DAC1
-#define DL_PIN_RTC_SQUARE_WAVE 27
+#define DL_PIN_BUTTON1 18 // A0 (ADC2) DAC2 //verified
+#define DL_PIN_BUTTON2 17 // A1 (ADC2) DAC1 //verfified
+#define DL_PIN_RTC_SQUARE_WAVE 10. //verified
 
-#define DL_PIN_RGB_LED 14 // (ADC2) LED is a WS2812B single data line. Connects to PIN IO14 / A4/ ADC2
-#define DL_PIN_BUILTIN_LED 13 // could change to  built in neopixel on pin 33 PIN_NEOPIXEL
+#define DL_PIN_RGB_LED 16 // verified (ADC2) LED is a WS2812B single data line. Connects to PIN IO14 / A4/ ADC2
+#define DL_PIN_BUILTIN_LED 33 //  verified could change to  built in neopixel on pin 33 PIN_NEOPIXEL
 //#define DL_HWSERIAL Serial2
 #elif defined(UM_ESP32S3)
 #define DL_PIN_BUTTON1 17 // A0 (ADC2) DAC2  NOTE on artist proof and prototype boards IO17 and IO18 have labels reversed
@@ -327,6 +327,8 @@ Serial.println(AWS_IOT_SUBSCRIBE_TOPIC);
 
 leds[0] = CRGB(10,10,10); // pale white to show AWS success
 FastLED.show();
+delay(300);
+leds[0] = CRGB(0,0,0); // pale white to show AWS success
 // TO DO ADD FUTURE DEVICE SHADOW TOPIC SETTING HERE
 }
 
@@ -498,7 +500,7 @@ int toggleLED(void)
       leds[0] = CRGB(50,50,50); //white to show adhoc
       FastLED.show();
     }
-    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    //digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
     }
 
@@ -516,7 +518,7 @@ int toggleLED(void)
        FastLED.show();
        Serial.println("LED ON");
     }
-    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    // digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
     return ledstate;
     }
 
@@ -1176,12 +1178,12 @@ void setup()
     // Set up pins
     {
         pinMode(DL_PIN_BUTTON1, INPUT);
-        pinMode(DL_PIN_BUILTIN_LED, OUTPUT);
+       // pinMode(DL_PIN_BUILTIN_LED, OUTPUT);
     }
 
     // Initialize builtin LED
     {
-        digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+       // digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
         ledstate = LOW;
         FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
         leds[0] = CRGB(5,0,0);
@@ -1363,8 +1365,8 @@ void loop()
      if(readingTimeOutCheck) {
        uint32_t sys_now_unixtime = time(NULL);
        AutoGAIN();
-       // Serial.print("sqw wave fell: ");
-      //  Serial.println(rtc_sqw_fell); //rtc_sqw_fell is called by isr_rtc_sqw() which is the RTC interrrupt
+       Serial.print("sqw wave fell: ");
+       Serial.println(rtc_sqw_fell); //rtc_sqw_fell is called by isr_rtc_sqw() which is the RTC interrrupt
        int sqwstate = digitalRead(DL_PIN_RTC_SQUARE_WAVE);
       // Serial.println(sqwstate);
        // Serial.println(sys_now_unixtime); // set new sqw fell 
