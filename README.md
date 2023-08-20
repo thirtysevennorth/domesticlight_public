@@ -5,7 +5,7 @@
 This August 12th version of the project address the following issues:
 1) fixes an issue with the Max31343 real time chip where the square wave pulse that triggers light readings freezes in bright sunlight.
 2) Adds a number of improvements: including an autogain / auto calibration function, a new series of color coded status lights to provide feedback about sensor status, improved wifi config stablity and improves the AWS reconnect stability on wifi networks with frequent interference.
-3) addresses and HTML validation error on config webpage
+3) addresses an HTML validation error on http config webpage
 
 # The update has two builds
 * DL_client is built for production and artist proof boards. These are boards with a series # of 200xxx
