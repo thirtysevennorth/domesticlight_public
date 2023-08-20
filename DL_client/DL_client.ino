@@ -1378,8 +1378,8 @@ void loop()
             
           if (ledstate = 1) 
             {toggleLED();}
-          Serial.println("starting color read. software date 12 Aug 2023");
-          //AutoGAIN(); // adjust gain to avoid saturation
+          Serial.println("starting color read. software date 12Aug2023");
+         
           struct color color = getColor(); // actual sensor reading
           Serial.println("color read complete");
           uint32_t rtc_now_unixtime = dl_now_unixtime();
@@ -1389,8 +1389,7 @@ void loop()
           #else
           float rtc_temp = rtc.getTemperature();
           #endif
-          //averageValue = color.values[10]; // vis light value for auto gain
-         // AutoGAIN();  // autogain: still gets stuck on intense brightness changes that cause sensor saturation
+          
          uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
          int should_perform = sampleCounter == 0;
          sampleCounter = (sampleCounter + 1) % dataFrequency;
