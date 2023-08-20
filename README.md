@@ -1,10 +1,11 @@
 # DOMESTIC LIGHT: working repository for the Domestic Light Project. 
 * Learn more and participate at https://domesticlight.art 
 
-# SOFTWARE UPDATE 4 Aug 2023
-This August 4th version of the project address the following issues:
+# SOFTWARE UPDATE 12 Aug 2023
+This August 12th version of the project address the following issues:
 1) fixes an issue with the Max31343 real time chip where the square wave pulse that triggers light readings freezes in bright sunlight.
 2) Adds a number of improvements: including an autogain / auto calibration function, a new series of color coded status lights to provide feedback about sensor status, improved wifi config stablity and improves the AWS reconnect stability on wifi networks with frequent interference.
+3) addresses and HTML validation error on config webpage
 
 # The update has two builds
 * DL_client is built for production and artist proof boards. These are boards with a series # of 200xxx
@@ -14,15 +15,25 @@ Please use the build appropriate to your board.
 
 # OVERVIEW OF PROJECT 
 The primary working file for sensor code is DL_client
-REV date 04 AUG 2023
+REV date 12 AUG 2023
 
 * Github Repository for code
 https://github.com/thirtysevennorth/domesticlight_public
 
 Files are intended to be built using the Arduino IDE v2.11 or later and is for use as part of the Domestic Light project.
 
+# TO UPDATE AN EXISTING BOARD
+1) install the required libraries and board package above in the Arduino IDE
+2) Connect the sensor board to your computer via a USB-C cable.
+3) Open the DL_client.ino file for your board series (prototype series 100xxx or proof/production series 200xxx) in the Arduino IDE
+4) Select correct board and port combination in the Arduino IDE window (eg UM Feather S3 and the serial port the board is connected to)  or Adafruit Feather S3). Please be sure to edit the code definition to select the correct board as well.
+5) Build and upload the code to your sensor
+6) hit the reset button and verify that the sensor is providing output over the serial monitor.
+If you encouter an upload error 1 or 2 be sure that you have specified the correct board and serial port, and on some machines ESP-32-S3 boards disconnect after compile and just before upload. Be sure to reselect the board if you see the USB symbol disappear.
+NOTE: If you continue to have difficulties, some computers  will require that you put the board into "BOOT" mode before flashing. To do so: press and hold the "boot" button on the esp-32 (the back tiny button on the microcontroller reachable with a paperclip, then press and release the "RESET" button (the right-hand button on the sensor), then release the "boot" button. Then select the board / port in the IDE and flash. 
 
-# REQUIRED BOARD FILES, LIBRARIES, DEPENDENCIES TO BUILD
+
+# REQUIRED BOARD FILES, LIBRARIES, DEPENDENCIES FOR ARDUINO IDE
 * PREREQUISITE:	INSTALL THE ARDUINO IDE 2.11 or later located at 
 * https://www.arduino.cc/en/software#future-version-of-the-arduino-ide
 
@@ -33,6 +44,7 @@ Espressif Arduino ESP32 boards
 https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_dev_index.json
 2) In Boards Manager add "esp32" by Espressif Systems. This should be on V 2.0.11 or later.
 3) If this is a new Arduino IDE install on a MAC system you may be prompted to install Xcode command line tools. The IDE will prompt you, or you can enter the following command in Terminal "xcode-select --install" and follow the prompts.
+4) the UM Feather S3 boards use the USB > Serial driver. You should not need to install any serial driver. 
 
 ** ADD THE FOLLOWING LIBRARIES using the Arduino Library Manager:
 1) RTClib
@@ -46,13 +58,4 @@ https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32
 * if cloning, be sure the clone is recursive and includes libose, o.se.oscript, and o.se.stdlib if you clone from the web.
    END REQUIRED BOARD FILES, LIBRARIES, DEPENDENCIES 
 
-# TO UPDATE AN EXISTING BOARD
-1) install the required libraries and board package above in the Arduino IDE
-2) Connect the sensor board to your computer via a USB-C cable.
-3) Open the DL_client.ino file for your board series (prototype series 100xxx or proof/production series 200xxx) in the Arduino IDE
-4) Select correct board / port (either Unexpected Maker (UM) Feather S3 or Adafruit Feather S3). Please be sure to edit the code definition to select the correct board as well.
-5) Build and upload the code to your sensor
-6) hit the reset button and verify that the sensor is providing output over the serial monitor.
-If you encouter an upload error 1 or 2 be sure that you have specified the coorect board and serial port, and on some machines ESP-32-S3 boards disconnect after compile and just before upload. Be sure to reselect the board if you see the USB symbol disappear.
 
-//// END UPDATE INSTRUCTIONS
