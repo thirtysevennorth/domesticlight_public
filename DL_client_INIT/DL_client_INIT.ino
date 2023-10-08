@@ -7,8 +7,8 @@
 
 // Choose  RTC. Production boards use MAX31343, prototypes use DS3231.
 // 
- #define DS3231
-// #define RTC_MAX31343
+// #define DS3231
+#define RTC_MAX31343
 
 #ifdef RTC_MAX31343
 #include  "MAX31343.h" //<AnalogRTCLibrary.h> must place ed

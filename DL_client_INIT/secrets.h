@@ -22,10 +22,10 @@
 #include <pgmspace.h>
 
 #define SECRET
-#define THING_NAME 00200000"     // 6 digit serial number CHANGE THIS FOR EACH BOARD. 
+#define THING_NAME "000000"     // 6 digit serial number CHANGE THIS FOR EACH BOARD.
 
-const char WIFI_SSID[] = "ssid";                   // place to include the setup wifi network
-const char WIFI_PASSWORD[] = "password";           // this info will be erased by user at user setup 
+const char WIFI_SSID[] = "ssid";                   // ADD SETUP NETWORK INFO HERE 
+const char WIFI_PASSWORD[] = "password";           // ADD SETUP NETWORK INFO HERE 
 
 const char AWS_IOT_ENDPOINT[] = "xxxx.amazonaws.com";       //PROJECT AWS ENDPOINT. 
  

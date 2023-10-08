@@ -325,8 +325,9 @@ AWS_IOT_SUBSCRIBE_TOPIC = dlSubscribe;
 Serial.print("Subscribe topic defined as: ");
 Serial.println(AWS_IOT_SUBSCRIBE_TOPIC);
 
-leds[0] = CRGB(10,10,10); // pale white to show AWS success
+leds[0] = CRGB(10,10,10); // pale white to show AWS config retrieval success
 FastLED.show();
+delay(300);
 // TO DO ADD FUTURE DEVICE SHADOW TOPIC SETTING HERE
 }
 
@@ -377,7 +378,7 @@ void connectAWS()
     Serial.println("Connecting to AWS IOT");
 
     int connect_ctr = 0;
-    while(!client.connect(THINGNAME.c_str()) && connect_ctr < 30)
+    while(!client.connect(THINGNAME.c_str()) && connect_ctr < 60)
     {
         Serial.print(".");
         delay(500);
@@ -433,8 +434,13 @@ boolean reconnectAWS() {
     client.publish(AWS_IOT_SUBSCRIBE_TOPIC.c_str(), "sensor back online:");
     }
      else {Serial.print("failed, rc=");
-     leds[0] = CRGB(100,0,0); // bright red to show aws connect fail
+     leds[0] = CRGB(200,0,0); // bright red to show aws connect fail
      FastLED.show();
+     delay(3000);
+     leds[0] = CRGB(0,0,0); // to black
+     FastLED.show();
+     delay(500);
+     ESP.restart(); //added restart in case of AWS no connection
      // Serial.print(client.state());
       }
       
@@ -989,7 +995,8 @@ void handleGet()
     prefs.end();
     leds[0] = CRGB(0,200,0); // bright green flash to show adhoc mode success
     FastLED.show();
-    Serial.println("saved config info");
+    Serial.println("saved config info, restarting");
+   // WiFi.disconnect();
     delay(1500);
     ESP.restart();
 }
@@ -1071,10 +1078,10 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
 #endif
     getUUID();
     WiFi.mode(WIFI_MODE_STA); 
-    delay(200);
+    delay(500);
     WiFi.softAP(adhoc_ssid, NULL);
     IPAddress adhoc_ipaddr = WiFi.softAPIP();
-    delay(200);
+    delay(500);
     server.on("/", handleRoot);
     server.on("/color", handleGetColor);
     server.on("/get", handleGet);
@@ -1110,7 +1117,9 @@ void dl_boot_client(void)
     prefs.clear();
 #endif
     getUUID();
-    
+  //  delay(100);
+  //  WiFi.mode(WIFI_STA);
+    delay(100);
     String ssid, pwd;
     if((ssid = prefs.getString("ssid", "")) != ""
        && (pwd = prefs.getString("pwd", "")) != "")
@@ -1118,6 +1127,7 @@ void dl_boot_client(void)
         Serial.printf("Connecting to (%s)...",
                       ssid.c_str());
         o.init(ssid.c_str(), pwd.c_str(), (unsigned int)15000); // need some type of error catch to start logging data locally if wifi fails
+        delay(500);
         Serial.printf("done\n");
         Serial.printf("IP address: %s\n",
                       o.wifiIPAddress().c_str());
@@ -1168,6 +1178,8 @@ void setup()
     // Set up serial communication
     {
         Serial.begin(115200);
+        delay(3000);
+        Serial.println("Serial communication started");
         // DL_HWSERIAL is UART 2, the TX/RX pins broken out
         // on the feather boards
        // DL_HWSERIAL.begin(115200);
@@ -1326,9 +1338,9 @@ void setup()
             // Can't initialize the light sensor.  Need to
             // strategize about what to do if this happens.
             Serial.printf("failed.\n");
-            leds[0] = CRGB(100,0,40); // red flash to show light sensor is not working 
+            leds[0] = CRGB(100,0,50); // red-blue flash to show light sensor is not working 
             FastLED.show();
-            delay(1000);
+            delay(1000); //consider adding restart?
         }
     }
 }
@@ -1378,7 +1390,7 @@ void loop()
             
           if (ledstate = 1) 
             {toggleLED();}
-          Serial.println("starting color read. software date 12Aug2023");
+          Serial.println("starting color read. software date 6OCT2023");
          
           struct color color = getColor(); // actual sensor reading
           Serial.println("color read complete");
