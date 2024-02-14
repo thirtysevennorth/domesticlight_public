@@ -495,7 +495,7 @@ int toggleLED(void)
     if(ledstate == HIGH)
     {
         ledstate = LOW;
-        leds[0] = CRGB(20,20,20);
+        leds[0] = CRGB(10,10,10);
         FastLED.show();
     }
     else
@@ -1070,7 +1070,9 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
 {
     Serial.printf("Entering ad hoc mode...");
     o.init();
+    delay(1000);
     dl_bind_OSC_functions();
+    delay(1000);
     adhoc_mode = true;
     prefs.begin("dl", false); // false => r/w
 #ifdef DL_FACTORY_RESET
@@ -1078,7 +1080,7 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
 #endif
     getUUID();
     WiFi.mode(WIFI_MODE_STA); 
-    delay(500);
+    delay(1000);
     WiFi.softAP(adhoc_ssid, NULL);
     IPAddress adhoc_ipaddr = WiFi.softAPIP();
     delay(500);
