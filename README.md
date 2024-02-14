@@ -1,26 +1,26 @@
 # DOMESTIC LIGHT: working repository for the Domestic Light Project. 
 * Learn more and participate at https://domesticlight.art 
 
-# SOFTWARE UPDATE 12 Aug 2023
-This August 12th version of the project address the following issues:
-1) fixes an issue with the Max31343 real time chip where the square wave pulse that triggers light readings freezes in bright sunlight.
-2) Adds a number of improvements: including an autogain / auto calibration function, a new series of color coded status lights to provide feedback about sensor status, improved wifi config stablity and improves the AWS reconnect stability on wifi networks with frequent interference.
-3) addresses an HTML validation error on http config webpage
+# SUSSEX HACK DAY BRANCH
 
-# The update has two builds
-* DL_client is built for production and artist proof boards. These are boards with a series # of 200xxx
+# SOFTWARE UPDATE XX Feb 2024
+This  version of the project address the following issues:
+* updates to accomadate the new production board including stemma QT I2C plugin sensors
+
+# Set flags in code for MAX31343 or DS3231 RTC
+* DL_client is built for production and artist proof boards. These are boards with a series # of 200xxx and 300xxx
 * DL_Client_DS3231 is built for the artist prototype board. These boards have a series # of 100xxx, and have seperate pcb boards for the light sensor and chip. 
 
-Please use the build appropriate to your board.
+Please use the flagappropriate to your board.
 
 # OVERVIEW OF PROJECT 
 The primary working file for sensor code is DL_client
-REV date 12 AUG 2023
+REV date 12 Feb 2024
 
 * Github Repository for code
 https://github.com/thirtysevennorth/domesticlight_public
 
-Files are intended to be built using the Arduino IDE v2.11 or later and is for use as part of the Domestic Light project.
+Files are intended to be built using the Arduino IDE v2.21 or later and is for use as part of the Domestic Light project.
 
 # TO UPDATE AN EXISTING BOARD
 1) install the required libraries and board package above in the Arduino IDE
@@ -32,9 +32,11 @@ Files are intended to be built using the Arduino IDE v2.11 or later and is for u
 If you encouter an upload error 1 or 2 be sure that you have specified the correct board and serial port, and on some machines ESP-32-S3 boards disconnect after compile and just before upload. Be sure to reselect the board if you see the USB symbol disappear.
 NOTE: If you continue to have difficulties, some computers  will require that you put the board into "BOOT" mode before flashing. To do so: press and hold the "boot" button on the esp-32 (the back tiny button on the microcontroller reachable with a paperclip, then press and release the "RESET" button (the right-hand button on the sensor), then release the "boot" button. Then select the board / port in the IDE and flash. 
 
+# INITIAL FLASH OF BOARD
+If you are flashing a board not previously configured you will need first use the DL_INIT file to upload the AWS keys and sensor ID to your board. Please contact the Domestic Light project via emial for the required AWS keys and device certificate. 
 
 # REQUIRED BOARD FILES, LIBRARIES, DEPENDENCIES FOR ARDUINO IDE
-* PREREQUISITE:	INSTALL THE ARDUINO IDE 2.11 or later located at 
+* PREREQUISITE:	INSTALL THE ARDUINO IDE 2.21 or later located at 
 * https://www.arduino.cc/en/software#future-version-of-the-arduino-ide
 
 **Install ESP32S3 BOARD file:
@@ -42,7 +44,7 @@ If you have not built a project in Arduino 2.x for ESP32-S3 on your machine plea
 1) In the Arduino IDE > Preferences > Additional Boards Manager URL add the URL for the 
 Espressif Arduino ESP32 boards
 https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_dev_index.json
-2) In Boards Manager add "esp32" by Espressif Systems. This should be on V 2.0.11 or later.
+2) In Boards Manager add "esp32" by Espressif Systems. This should be on V 2.0.14 production release, but has not been tested on v 3.0.0 alpa releases
 3) If this is a new Arduino IDE install on a MAC system you may be prompted to install Xcode command line tools. The IDE will prompt you, or you can enter the following command in Terminal "xcode-select --install" and follow the prompts.
 4) the UM Feather S3 boards use the USB > Serial driver. You should not need to install any serial driver. 
 
