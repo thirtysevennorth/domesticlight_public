@@ -24,7 +24,7 @@ client = udp_client.SimpleUDPClient(ip, port)
 
 """ sensor list array to hold list of sensors to look up. cycles through one at a time to avoid read throttling. alterantely use a csv file
 """ #100000 series prototype, 200000 is artist proof, 300000 is first production run
-sensor_list = [100070, 100072, 100200, 100203, 100205] 
+sensor_list = [100203, 100226, 300004] 
 #sensor_list=[]
 url='https://data.domesticlight.art/api/dynamodb/dy/excute'
 headers = {
