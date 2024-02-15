@@ -2,6 +2,10 @@
 * Learn more and participate at https://domesticlight.art 
 
 # SUSSEX HACK DAY BRANCH
+This branch is set up as a place to pull copies of the sensor source from for the Feb 2024 Hackday at Sussex. For works in progress please fork from this branch and we'll work through merges. Pipe up in discord if you need access to the this branch.
+
+Discord server : invite: https://discord.gg/t8UHbhUXkd 
+tag questions around sensor code in the discord server for @strangelfoot (John Macallum - chiming in remotely from Berlin)
 
 # SOFTWARE UPDATE XX Feb 2024
 This  version of the project address the following issues:
