@@ -1,0 +1,71 @@
+// Attached json files are raw arbitrary portions of the data set from a full data set as determined by a DynamoDB>S3 table 
+// back up job. each represents 1/43rd of the base data set.
+
+use gunzip to decompress
+
+other options for generating pre-computed csv
+
+- a nodejs library for dynamo to CSV generation. This could run in the current endpoint or another and offer confiurable access
+
+https://github.com/edasque/DynamoDBtoCSV
+or this fork that runs as a node library
+https://github.com/kelyvin/dynamodb-to-csv?tab=readme-ov-file#readme
+
+
+A bunch of suggestions on  alternative global table indexes to support query formation on the current table.
+
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
+
+Or perhaps overkill - setting up a connector interface https://docs.aws.amazon.com/athena/latest/ug/connectors-dynamodb.html
+
+The JSON schema in the gzip files:
+
+{
+ "device_id": 200042,
+ "sample_time": 1691958064663,
+ "device_data": {
+  "ASTEP": 599,
+  "ATIME": 29,
+  "F10_NIR": 1250,
+  "F1_415": 71,
+  "F2_445": 90,
+  "F3_480": 99,
+  "F4_515": 108,
+  "F5_555": 99,
+  "F6_590": 119,
+  "F7_630": 119,
+  "F8_680": 206,
+  "F9_VIS": 1237,
+  "GAIN": 2,
+  "MAC_ID": "70:04:1D:AD:C3:90",
+  "RTCTemp": 27,
+  "unixtime": 1691958064,
+  "UUID": "200042"
+ }
+}
+
+Dynamo JSON
+
+{
+ "device_id": 200042,
+ "sample_time": 1691958064663,
+ "device_data": {
+  "ASTEP": 599,
+  "ATIME": 29,
+  "F10_NIR": 1250,
+  "F1_415": 71,
+  "F2_445": 90,
+  "F3_480": 99,
+  "F4_515": 108,
+  "F5_555": 99,
+  "F6_590": 119,
+  "F7_630": 119,
+  "F8_680": 206,
+  "F9_VIS": 1237,
+  "GAIN": 2,
+  "MAC_ID": "70:04:1D:AD:C3:90",
+  "RTCTemp": 27,
+  "unixtime": 1691958064,
+  "UUID": "200042"
+ }
+}
