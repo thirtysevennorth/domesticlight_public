@@ -22,7 +22,7 @@
 
 ///////////////////////////////////////////////////////////
 // DEFINE THE PROCESSOR IN USE
-// Processors supported are UM Feather S3 or Adafruit Feather S3. choose 1
+// Processors supported are UM Feather S3 or Adafruit Feather S3. choose 1. Note FeatherESP32 processors are not currently working on the produciton baord.
 
 //#define ADAFRUIT_FEATHER_ESP32
 #define UM_ESP32S3
@@ -85,7 +85,7 @@
 #define _I2C_WRITE write
 #define _I2C_READ  read
 
-// OSE libraries. installed with MicroOSCript
+// OSE libraries. installed with MicroOSCript , maybe replaced with standard OSC library
 #include "ose_conf.h"
 #include "libose/ose_assert.h"
 #include "libose/ose_util.h"
