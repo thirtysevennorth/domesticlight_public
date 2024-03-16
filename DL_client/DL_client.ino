@@ -10,6 +10,7 @@
 // then using a browser go to HTTP://192.168.4.1
 // Enter your local WIFI network SSID, and its password which is saved locally on the sensor
 // You can also optionally configure local OSC transmission of the data.
+// updated 15 March 2024
 
 ///////////////////////////////////////////////////////////
 // Preferences setting and reset
@@ -110,10 +111,11 @@ static String THINGNAME;
 static const char * clientID;
 String dlPublish;
 String dlSubscribe;
+String dlStatus;
 
 static String AWS_IOT_PUBLISH_TOPIC;
 static String AWS_IOT_SUBSCRIBE_TOPIC; // these stay as strings then converted at time of use with .c_str()
-
+static String AWS_IOT_STATUS_TOPIC;
 // String dlShadowUpdate;  // for use with future device shadow
 // String dlShadowGet;
 // String dlShadowUpdateAccepted;
@@ -183,7 +185,7 @@ static Adafruit_AS7341 as7341;
 static MicrOSCriptESP32 o;
 static WebServer server(adhoc_http_port);
 static Preferences prefs;
-
+static String revisionDate = "15MAR2024"; //set software revision date
 
 // LIGHT SENSOR CONFIGURATION  
 uint8_t ATIME = 29; // sets variables for light sensor config
@@ -210,10 +212,10 @@ long previoussysTime = 0;
 #define DL_NTP_UPDATE_PERIOD_SEC 86400 // 1 day
 
 // We increment this counter everytime the square wave falls. Once
-// it gets to 86400 (one day), we sync with NTP again and reset this
+// it gets to 86400 (one day), we sync with NTP again, reboot wifi, and reset this
 // counter.
-static uint32_t ntp_sec_counter = 0;
-
+static int ntp_sec_counter = 0;
+static int DL_AWS_RECONNECT_PERIOD_SEC = 61;
 // keep track of the builtin LED state
 static int ledstate = 1;
 
@@ -325,6 +327,11 @@ AWS_IOT_SUBSCRIBE_TOPIC = dlSubscribe;
 Serial.print("Subscribe topic defined as: ");
 Serial.println(AWS_IOT_SUBSCRIBE_TOPIC);
 
+dlStatus = "DomesticLight/" + uuid + "/status";  // setting subscribe topic from preferences.h
+AWS_IOT_STATUS_TOPIC = dlStatus;
+Serial.print("Status topic defined as: ");
+Serial.println(AWS_IOT_STATUS_TOPIC);
+
 leds[0] = CRGB(10,10,10); // pale white to show AWS config retrieval success
 FastLED.show();
 delay(300);
@@ -393,9 +400,13 @@ void connectAWS()
     }
  
     // Subscribe to a topic
-    client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
-    client.subscribe(AWS_IOT_PUBLISH_TOPIC.c_str());
-    client.publish(AWS_IOT_SUBSCRIBE_TOPIC.c_str(),  "sensor online");
+   // client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
+    // client.subscribe(AWS_IOT_PUBLISH_TOPIC.c_str());
+    String status_payload = "{\"event\":\"connected\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}";
+    client.publish(AWS_IOT_STATUS_TOPIC.c_str(), status_payload.c_str());
+    Serial.println("{\"event\":\"connected\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}");
+    //client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"connected\", \"type\":\"regular\", \"UUID\":\"" + THINGNAME + "\"}");
+
 
     /// shadow topics remark out if not in use.  
     // client.subscribe(AWS_IOT_SHADOWUPDATE_TOPIC); 
@@ -409,7 +420,7 @@ void connectAWS()
     Serial.println("AWS IoT Connected! - subscribe and publish topics");
     Serial.println(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
     Serial.println(AWS_IOT_PUBLISH_TOPIC.c_str());
-    // Serial.println(AWS_IOT_SHADOWUPDATE_TOPIC);
+    Serial.println(AWS_IOT_STATUS_TOPIC.c_str());
     // Serial.println(AWS_IOT_SHADOWGET_TOPIC);
     leds[0] = CRGB(20,30,0); // brighter reddish green to show AWSconnect
     FastLED.show();
@@ -425,13 +436,15 @@ boolean reconnectAWS() {
      leds[0] = CRGB(20,0,0); // red to show aws connect error
      FastLED.show();
      if (client.connect(THINGNAME.c_str())) {
-      Serial.println("reconnected to AWS");
+      Serial.println("{\"event\":\"connected\", \"type\":\"reconnect after error\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}");
     // Once connected, publish an announcement...
-   // client.publish(publishTopic, publishPayload);
-  // ... and resubscribe
-    client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
-    client.subscribe(AWS_IOT_PUBLISH_TOPIC.c_str());
-    client.publish(AWS_IOT_SUBSCRIBE_TOPIC.c_str(), "sensor back online:");
+    // client.publish(publishTopic, publishPayload);
+    // ... and resubscribe
+    // client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
+    // client.subscribe(AWS_IOT_PUBLISH_TOPIC.c_str());
+    String status_payload = "{\"event\":\"connected\", \"type\":\"reconnect after error\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}";
+    client.publish(AWS_IOT_STATUS_TOPIC.c_str(), status_payload.c_str());
+    //client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"connected\", \"type\":\"reconnect after error\", \"UUID\":\"" + THINGNAME + "\"}");
     }
      else {Serial.print("failed, rc=");
      leds[0] = CRGB(200,0,0); // bright red to show aws connect fail
@@ -1079,7 +1092,7 @@ void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
     prefs.clear();
 #endif
     getUUID();
-    WiFi.mode(WIFI_MODE_STA); 
+    // WiFi.mode(WIFI_MODE_STA); 
     delay(1000);
     WiFi.softAP(adhoc_ssid, NULL);
     IPAddress adhoc_ipaddr = WiFi.softAPIP();
@@ -1119,8 +1132,8 @@ void dl_boot_client(void)
     prefs.clear();
 #endif
     getUUID();
-  //  delay(100);
-  //  WiFi.mode(WIFI_STA);
+    delay(100);
+    WiFi.mode(WIFI_STA);
     delay(100);
     String ssid, pwd;
     if((ssid = prefs.getString("ssid", "")) != ""
@@ -1392,8 +1405,8 @@ void loop()
             
           if (ledstate = 1) 
             {toggleLED();}
-          Serial.println("starting color read. software date 6OCT2023");
-         
+          Serial.println("starting color read.");
+          ntp_sec_counter = (ntp_sec_counter + 1);
           struct color color = getColor(); // actual sensor reading
           Serial.println("color read complete");
           uint32_t rtc_now_unixtime = dl_now_unixtime();
@@ -1404,17 +1417,45 @@ void loop()
           float rtc_temp = rtc.getTemperature();
           #endif
           
-         uint32_t ntp_sec_counter = (ntp_sec_counter + 1) % DL_NTP_UPDATE_PERIOD_SEC;
+         
          int should_perform = sampleCounter == 0;
          sampleCounter = (sampleCounter + 1) % dataFrequency;
-            Serial.printf("sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
-                          sampleCounter, dataFrequency, should_perform);
+            Serial.printf("ntp_sec_counter: %d, sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
+                          ntp_sec_counter, sampleCounter, dataFrequency, should_perform);
          client.loop(); // check for any incoming message
-         if(ntp_sec_counter == 0)
+
+         if(ntp_sec_counter % DL_NTP_UPDATE_PERIOD_SEC == 0)
             {
-                // A day has gone by, time to do an NTP update
+                // A day has gone by, time to do an NTP update and restart wifi
                 Serial.printf("NTP Sync\n");
                 configTime(0, 0, dl_ntp_server1);
+                Serial.print("{\"event\":\"reboot\", \"type\":\"regular\", \"revisionDate\":\"" + revisionDate + "\"}");
+                String status_payload = "{\"event\":\"reboot\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}";
+                client.publish(AWS_IOT_STATUS_TOPIC.c_str(), status_payload.c_str());
+                //client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"reboot\", \"type\":\"regular\", \"UUID\":\"" + THINGNAME + "\"}");
+                delay(2000);
+                client.disconnect();
+                delay(100);
+                WiFi.disconnect();
+                delay(300);
+                ESP.restart();
+                //Serial.print("wifi reconnected and NTP sync reset");
+            }
+            else if(ntp_sec_counter % DL_AWS_RECONNECT_PERIOD_SEC == 0)
+            { //disconnect and reconnect AWS every x seconds. set to 1 minutes currently.
+                String status_payload = "{\"event\":\"disconnected\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}";
+                client.publish(AWS_IOT_STATUS_TOPIC.c_str(), status_payload.c_str());
+                // client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"disconnected\", \"type\":\"regular\", \"UUID\":\"" + THINGNAME + "\"}");
+                client.disconnect();
+                Serial.print("{\"event\":\"disconnected\", \"type\":\"regular\", \"revisionDate\":\"" + revisionDate + "\"}");
+                delay(300);
+                connectAWS();
+                // client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"connected\", \"type\":\"regular\"}");
+                Serial.print("{\"event\":\"connected\", \"type\":\"regular\", \"revisionDate\":\"" + revisionDate + "\"}");
+            }
+            else
+            {  Serial.print("seconds since reboot and NTP sync: ");
+               Serial.println(ntp_sec_counter);
             }
          rtc_sqw_fell = 0; 
          readingStartTime = millis(); // resets SQW interrupt flag
