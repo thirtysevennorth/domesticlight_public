@@ -1,4 +1,5 @@
 // SEE README.MD file for more details, credits, license.
+// Released under an MIT License, Copyright 2024 37 North, Inc., Ian Winters and John Macallum.
 
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
 // AND SERVER credentials were stored in permanent memory.
