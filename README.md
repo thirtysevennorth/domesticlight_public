@@ -5,6 +5,7 @@
 This March 15st, 2024 version of the project address the following issues:
 1) provides status monitoring and automatic reconnect for AWS to address wifi and connection issues
 2) preps devices for use of additional I2C connection for add-on sensor
+3) adds WebOTA update capability to allow for updates of the device from a webpage without an IDE
 
 # The update has two builds
 * DL_client is built for production and artist proof boards. These are boards with a series # of 300xxx and 200xxx respectively.
@@ -52,7 +53,8 @@ https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32
 2) Adafruit_AS7341
 3) pubSubClient by Nick O'leary http://knolleary.net
 4) ArduinoJson https://arduinojson.org
-5) AnalogRTClib by Analog Devices / Maxim - please see DL_client README as to required and inlcued bugfix edit to the AnalogRTCLib for use with the MAX31343 chip
+5) AnalogRTClib by Analog Devices / Maxim - please see readme and use version included with this library that includes bugfix edit to the AnalogRTCLib for use with the MAX31343 chip
+6) ESP32-OTA by Scott Baker
 
 ** Install the following library manually:
 * MicroOSCcript. Download zip file "https://github.com/thirtysevennorth/domesticlight_public/blob/main/MicrOSCript.zip". Once downloaded add the library to your Arduino Libraries folder. 
@@ -71,4 +73,5 @@ Additional  libraries used under the terms of their license include:
 * [Adafruit AS7341](https://github.com/adafruit/Adafruit_AS7341) under a BSD License
 * [PubSubClient](https://github.com/knolleary/pubsubclient) under an MIT License
 * [AnalogRTCLIB](https://github.com/analogdevicesinc/AnalogRTCLibrary/blob/7f996e41772edafeb7a04c1ae92abd2bdc994f63/src/MAX31343/MAX31343.h) under an MIT License
+* [ESP Web-OTA](https://github.com/scottchiefbaker/ESP-WebOTA) MIT License 
 * MicroOSCript under a license from John Macallum for use in this client software.
