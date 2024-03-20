@@ -11,7 +11,7 @@
 // then using a browser go to HTTP://192.168.4.1
 // Enter your local WIFI network SSID, and its password which is saved locally on the sensor
 // You can also optionally configure local OSC transmission of the data.
-// TO UPDATE CODE  - UPLOAD binary file to domesticlight.local, user name is domesticlight, and password is your UUID
+// TO UPDATE CODE  - UPLOAD binary file to domesticlight.local, user name is your  UUID, and password is domesticlight
 // updated 15 March 2024
 
 ///////////////////////////////////////////////////////////
