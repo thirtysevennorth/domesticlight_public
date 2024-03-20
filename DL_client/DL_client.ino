@@ -11,6 +11,7 @@
 // then using a browser go to HTTP://192.168.4.1
 // Enter your local WIFI network SSID, and its password which is saved locally on the sensor
 // You can also optionally configure local OSC transmission of the data.
+// TO UPDATE CODE  - UPLOAD binary file to domesticlight.local, user name is domesticlight, and password is your UUID
 // updated 15 March 2024
 
 ///////////////////////////////////////////////////////////
@@ -97,10 +98,17 @@
 #include "libose/ose_print.h"
 #include "o.se.stdlib/ose_stdlib.h"
 
+
 // ADHOC MODE index.html served in ad hoc mode
 #include "index.h"
 static const char * const adhoc_ssid = "DomesticLight";
 static const int adhoc_http_port = 80;
+
+// WEBOTA
+#include <WebOTA.h>
+#include <ESPmDNS.h>
+const char * host = "domesticlight"; // Used for MDNS resolution
+// ota url access = http://domesticlight.local:8080/update
 
 
 //// AWS TOPICS ///////////////////////
@@ -209,6 +217,7 @@ static int rtc_lost_power; //currently production boards do not look for power l
 static volatile int rtc_sqw_fell = 0;
 float rtc_temp = 0;
 long previoussysTime = 0;
+static unsigned long previousMillis = 0;
 
 #define DL_NTP_UPDATE_PERIOD_SEC 86400 // 1 day
 
@@ -386,7 +395,10 @@ void connectAWS()
     Serial.println("Connecting to AWS IOT");
 
     int connect_ctr = 0;
-    while(!client.connect(THINGNAME.c_str()) && connect_ctr < 60)
+    String tempname = (uuid);
+    const char* name = tempname.c_str();
+    Serial.println(name);
+    while(!client.connect(name) && connect_ctr < 60)
     {
         Serial.print(".");
         delay(500);
@@ -401,14 +413,12 @@ void connectAWS()
     }
  
     // Subscribe to a topic
-   // client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
-    // client.subscribe(AWS_IOT_PUBLISH_TOPIC.c_str());
+    client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
+    client.subscribe(AWS_IOT_STATUS_TOPIC.c_str());
     String status_payload = "{\"event\":\"connected\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}";
     client.publish(AWS_IOT_STATUS_TOPIC.c_str(), status_payload.c_str());
     Serial.println("{\"event\":\"connected\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}");
-    //client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"connected\", \"type\":\"regular\", \"UUID\":\"" + THINGNAME + "\"}");
-
-
+    
     /// shadow topics remark out if not in use.  
     // client.subscribe(AWS_IOT_SHADOWUPDATE_TOPIC); 
     // client.subscribe(AWS_IOT_SHADOWGET_TOPIC);
@@ -417,7 +427,6 @@ void connectAWS()
     // client.subscribe(AWS_IOT_SHADOWUPDATE_REJECT_TOPIC);
     // client.subscribe(AWS_IOT_SHADOWUPDATE_DELTA_TOPIC);
 
-    
     Serial.println("AWS IoT Connected! - subscribe and publish topics");
     Serial.println(AWS_IOT_SUBSCRIBE_TOPIC.c_str());
     Serial.println(AWS_IOT_PUBLISH_TOPIC.c_str());
@@ -1150,8 +1159,17 @@ void dl_boot_client(void)
         Serial.printf("Listening for OSC on UDP port %d\n",
                       o.udpPort());
         dl_bind_OSC_functions();
+        //mdns_hostname_set(host); // wifi init for OTA
+        if (!MDNS.begin(host)) {
+          Serial.println("Error setting up MDNS responder!");
+          } else {
+          Serial.println("mDNS responder started at domesticlight.local");
+          }
         leds[0] = CRGB(20,20,0); // red-green to show wifi connect
         FastLED.show();
+
+
+     
     }
     else
     {
@@ -1359,6 +1377,9 @@ void setup()
             delay(1000); //consider adding restart?
         }
     }
+    // Start WebOTA
+    webota.useAuth(uuid.c_str(), "domesticlight"); // setting webota pass to uuid
+    webota.init(8080, "/update"); //adding in webota init start
 }
 
 void loop()
@@ -1370,31 +1391,15 @@ void loop()
   }
     else
     {  
-    /// test of code for a timeout flag for autogain adjustment outside of the blocking loop
-    // bool timeOutFlag = readingTimeOutCheck();  // setting timeout flag to adjust autotgain
-    //if(as7341.checkReadingProgress() || timeOutFlag ) {
-    // if (timeOutFlag) {
-    //  loop();
-    //  } //Recover/restart/retc.
-    // else {
-     //IMPORTANT: make sure readings is a uint16_t array of size 12, otherwise strange things may happen
-    // as7341.getAllChannels(readings);  //Calling this any other time may give you old data
-    // if (!as7341.readAllChannels(readings))
-    //  Serial.println("AS7341 Error reading all channels!");
-    // else
-    // Serial.println(readings[10]);
-    // averageValue = readings[10]; 
-    // AutoGAIN();
-   //  as7341.startReading();
-     //   }
-     //  }
+     webota.handle();
+     client.loop(); // check for any incoming message
      if(readingTimeOutCheck) {
        uint32_t sys_now_unixtime = time(NULL);
        AutoGAIN();
        // Serial.print("sqw wave fell: ");
-      //  Serial.println(rtc_sqw_fell); //rtc_sqw_fell is called by isr_rtc_sqw() which is the RTC interrrupt
+       //  Serial.println(rtc_sqw_fell); //rtc_sqw_fell is called by isr_rtc_sqw() which is the RTC interrrupt
        int sqwstate = digitalRead(DL_PIN_RTC_SQUARE_WAVE);
-      // Serial.println(sqwstate);
+       // Serial.println(sqwstate);
        // Serial.println(sys_now_unixtime); // set new sqw fell 
        if (millis() - readingStartTime >= (1010)) {rtc_sqw_fell = 1; Serial.println("using millis counter");}
 
@@ -1423,7 +1428,6 @@ void loop()
          sampleCounter = (sampleCounter + 1) % dataFrequency;
             Serial.printf("ntp_sec_counter: %d, sampleCounter: %d, dataFrequency: %d, should_perform: %d\n",
                           ntp_sec_counter, sampleCounter, dataFrequency, should_perform);
-         client.loop(); // check for any incoming message
 
          if(ntp_sec_counter % DL_NTP_UPDATE_PERIOD_SEC == 0)
             {
@@ -1433,26 +1437,29 @@ void loop()
                 Serial.print("{\"event\":\"reboot\", \"type\":\"regular\", \"revisionDate\":\"" + revisionDate + "\"}");
                 String status_payload = "{\"event\":\"reboot\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}";
                 client.publish(AWS_IOT_STATUS_TOPIC.c_str(), status_payload.c_str());
-                //client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"reboot\", \"type\":\"regular\", \"UUID\":\"" + THINGNAME + "\"}");
-                delay(2000);
-                client.disconnect();
-                delay(100);
-                WiFi.disconnect();
-                delay(300);
-                ESP.restart();
+                if (millis() - previousMillis >= (1300)) { //non-blocking delay to allow for future OTA
+                  previousMillis = millis();
+                  client.disconnect();
+                  delay(100);
+                  WiFi.disconnect();
+                  delay(200);
+                  ESP.restart();
+                  }
                 //Serial.print("wifi reconnected and NTP sync reset");
             }
             else if(ntp_sec_counter % DL_AWS_RECONNECT_PERIOD_SEC == 0)
-            { //disconnect and reconnect AWS every x seconds. set to 1 minutes currently.
+            { //disconnect and reconnect AWS every x seconds. set to 61 seconds currently.
                 String status_payload = "{\"event\":\"disconnected\", \"type\":\"regular\", \"UUID\":\"" + uuid + "\", \"revisionDate\":\"" + revisionDate + "\"}";
                 client.publish(AWS_IOT_STATUS_TOPIC.c_str(), status_payload.c_str());
                 // client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"disconnected\", \"type\":\"regular\", \"UUID\":\"" + THINGNAME + "\"}");
                 client.disconnect();
                 Serial.print("{\"event\":\"disconnected\", \"type\":\"regular\", \"revisionDate\":\"" + revisionDate + "\"}");
-                delay(300);
-                connectAWS();
-                // client.publish(AWS_IOT_STATUS_TOPIC.c_str(), "{\"event\":\"connected\", \"type\":\"regular\"}");
-                Serial.print("{\"event\":\"connected\", \"type\":\"regular\", \"revisionDate\":\"" + revisionDate + "\"}");
+                if (millis() - previousMillis >= (200)) {
+                  previousMillis = millis();
+                  connectAWS();
+                  Serial.print("{\"event\":\"connected\", \"type\":\"regular\", \"revisionDate\":\"" + revisionDate + "\"}");
+                  }
+                
             }
             else
             {  Serial.print("seconds since reboot and NTP sync: ");
@@ -1470,11 +1477,6 @@ void loop()
 
             {
                     // send data to AWS here
-                    // the 12 individual values from the color sensor
-                    // can be accessed with color.values[0], ...,
-                    // color.values[11].
-                    // makejson(jsonbuf, uuid, color, rtc_now_unixtime);
-
                     // first check to see if we are connected and then run the AWS reconnection function
                 if (!client.connected()) {
                   long now = millis();
@@ -1494,6 +1496,7 @@ void loop()
                     Serial.printf("data sent %d bytes:\n%s\n", strlen(jsonbuf), jsonbuf);
                     printDeviceTime(); // prints UTC time and temp to serial
                     }
+                    client.loop();
                     toggleLED(); // data read and transmit complete. turn on LED
                 
             
