@@ -104,7 +104,7 @@
 static const char * const adhoc_ssid = "DomesticLight";
 static const int adhoc_http_port = 80;
 
-// WEBOTA
+// WEBOTA functionality - called in loop and setup.
 #include <WebOTA.h>
 #include <ESPmDNS.h>
 const char * host = "domesticlight"; // Used for MDNS resolution
@@ -205,7 +205,6 @@ uint16_t averageValue = 4000;
 // DATA COLLECTION FREQUENCY
 static int dataFrequency = 5; // set to a number of seconds to publish data based on square wave ticks. refers to loop ~ line 870
 static int sampleCounter = 0;
-
 
 // used to decide what to do in the loop depending on whether
 // we're in config mode or not. this gets set if button 1 is

@@ -59,6 +59,14 @@ static const char * const adhoc_ssid = "DomesticLight";
 static const int adhoc_http_port = 80;
 
 
+///WEB_OTA
+// WEBOTA functionality - called in loop and setup.
+#include <WebOTA.h>
+#include <ESPmDNS.h>
+const char * host = "domesticlight"; // Used for MDNS resolution
+// ota url access = http://domesticlight.local:8080/update
+unsigned long readingStartTime;
+
 //// AWS TOPICS ///////////////////////
 static String cert_ca;
 static String cert_device;
@@ -386,12 +394,17 @@ void setup()
     Serial.print("MAC ADDRESS:  ");
     Serial.println(WiFi.macAddress());
     Serial.println("THEN REFLASH BOARD WITH DL_client.ino ");
+    // Start WebOTA
+    webota.useAuth(uuid.c_str(), "domesticlight"); // setting webota pass to uuid
+    webota.init(8080, "/update"); //adding in webota init start
 }
 
 void loop()
 {
 toggleLED();
-delay(1000);
+readingStartTime = millis(); 
+if (millis() - readingStartTime >= (1000)) {
+
 Serial.println("SETTINGS SAVED TO MEMORY.");
     delay(100);
     Serial.println("COMPLETE: Please log the UUID and MAC Address.");
@@ -401,5 +414,10 @@ Serial.println("SETTINGS SAVED TO MEMORY.");
     Serial.println(WiFi.macAddress());
     Serial.println("THEN REFLASH BOARD WITH DL_client.ino ");
     toggleLED();
-delay(3000);
+ }
+if (millis() - readingStartTime >= (3000)) {
+  Serial.println("LOOPING.");
+}
+webota.handle();
+
 }

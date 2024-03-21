@@ -1,10 +1,10 @@
 # This file is the client for the Domestic Light Sensor.
-# REV 12 Aug 2023
-This update address a bug in the RTC that causes some boards to stop working in bright sunlight.
+# REV 15 MARCH 2024
+This update adds WEBOTA functionality, improved bi-directional communication with MQTT, robust disconnect improvements. 
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
 USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino to STORE SERVER CREDENTIALS IN PERM STORAGE.
-The code is for use with Artist Proof and Production (series 200xxx) version of the sensor using ESP32-S3 Feather boards (Adafruit and Unexpected Maker) and the MAX31343 RTC, and intended to be built using the Arduino IDE v 2.11 or later.
+The code is for use with Production (series 200xxx) and (300xxx) version of the sensor using ESP32-S3 Feather boards (Unexpected Maker) and the MAX31343 RTC, and intended to be built using the Arduino IDE v 2.32 or later.
 __________________
 
 # INITIAL USER SETUP NOTES
@@ -32,15 +32,12 @@ To test:
  * To factory reset uncomment #define DL_FACTORY_RESET. This will require the board to be reflashed with the DL_client_INIT sketch.
 
 # TO DO / ROADMAP 
-  * Provide on board approximate rough RGB conversion to print to local OSC.
+  * Provide on board RGB conversion to print to local OSC.
   * Add wifi / power loss buffer code that will store data when wifi is not available. 
-  * Add AWS Device Shadow functionality to aid in buffer data management
   * Provide support for connection to institutional wifi networks which require an X509 certificate. 
-  * Provide support for ENS VOC and methane sensors
+  * Provide support for additional I2C sensors
  
 #  KNOWN BUGS 
- * Currently the message handler does not correctly recieve or process messages from AWS 
- * If AWS connection is interupted, while the device is connected to serial the serial connection is lost and has to be re-enabled.
  * The wifi network selection does not reliably connect to wifi networks without a password.
  * The OSC message for current Unixtime does not transmit correctly to Isadora and generates an unknown value type
  * If the device enters Adhoc mode and no connection is made within 1 to 3 minutes the device restarts
@@ -57,5 +54,6 @@ To test:
 * Adafruit AS7341 https://github.com/adafruit/Adafruit_AS7341 Software License Agreement (BSD License) c) 2019 Bryan Siepert for Adafruit Industries
 * Adafruit RTCLib https://github.com/adafruit/RTClib MIT License Adafruit 2019
 * ArduinoJson  https://github.com/bblanchon/ArduinoJson Beniot BLANCHON MIT 2023
+* ESP WebOTA  https://github.com/scottchiefbaker/ESP-WebOTA MIT License Scott Baker 2019
 * AnalogRTCLib  Copyright(C) Analog Devices Inc.
 * ESP32S3 and Arduino libraries by Espressif Systems
