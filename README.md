@@ -2,10 +2,12 @@
 * Learn more and participate at https://domesticlight.art 
 
 # SOFTWARE UPDATE March 15 2024
-This March 15st, 2024 version of the project address the following issues:
+This March 15th, 2024 version of the project address the following issues:
 1) provides status monitoring and automatic reconnect for AWS to address wifi and connection issues
 2) preps devices for use of additional I2C connection for add-on sensor
 3) adds WebOTA update capability to allow for updates of the device from a webpage without an IDE
+
+4) A reference binary release for use reflashing boards with OTA functionaly is release 1.0
 
 # The update has two builds
 * DL_client is built for production and artist proof boards. These are boards with a series # of 300xxx and 200xxx respectively.
