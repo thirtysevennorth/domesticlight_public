@@ -359,7 +359,7 @@ void publishMessage(char *jsonBuffer)
 #endif
 }
 
-// message handler is currently not working
+// message handler  working
 void messageHandler(char* topic, byte* payload, unsigned int length)
 {
   Serial.print("Message arrived [");
