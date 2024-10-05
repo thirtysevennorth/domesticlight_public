@@ -13,7 +13,7 @@
 // Enter your local WIFI network SSID, and its password which is saved locally on the sensor
 // You can also optionally configure local OSC transmission of the data.
 // TO UPDATE CODE  - UPLOAD binary file to domesticlight.local, user name is your  UUID, and password is domesticlight
-// updated 21 Sept 2024
+// updated 5 Oct 2024
 
 ///////////////////////////////////////////////////////////
 // Preferences setting and reset
