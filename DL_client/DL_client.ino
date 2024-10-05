@@ -1,9 +1,10 @@
 // SEE README.MD file for more details, credits, license.
 // Released under an MIT License, Copyright 2024 37 North, Inc., Ian Winters and John Macallum.
-
+// NEW OSC BRANCH
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
 // AND SERVER credentials were stored in permanent memory.
 
+// this version repalces microOSC Script with Arduino OSC to allow for ESP V3.0 compatabilithy
 // INITIAL SETUP NOTES
 // For initial set-up boot into ADHOC mode by pressing and holding Button 1 (Left Button), 
 // while pressing and releasing the RESET Button (Right Button). The device will boot into ADHOC MODE
@@ -12,7 +13,7 @@
 // Enter your local WIFI network SSID, and its password which is saved locally on the sensor
 // You can also optionally configure local OSC transmission of the data.
 // TO UPDATE CODE  - UPLOAD binary file to domesticlight.local, user name is your  UUID, and password is domesticlight
-// updated 15 March 2024
+// updated 21 Sept 2024
 
 ///////////////////////////////////////////////////////////
 // Preferences setting and reset
@@ -44,7 +45,7 @@
 ////////////////////////////////////////////////////////////
 
 #include <pgmspace.h>
-#include <MicrOSCriptESP32.h>
+// #include <MicrOSCriptESP32.h> replacing microOSCript for ESP v3.0 compatiablity
 #include <Wire.h>
 #include <FastLED.h> // LED library for color changing WS2812B
 
@@ -56,6 +57,9 @@
 
 #include <WiFi.h>
 #include <WiFiUDP.h>
+#include <OSCMessage.h>
+#include <OSCBundle.h>
+#include <OSCTiming.h>
 #include <WebServer.h>
 #include <Preferences.h>
 #include <cstdio>
@@ -88,16 +92,17 @@
 #define _I2C_WRITE write
 #define _I2C_READ  read
 
-// OSE libraries. installed with MicroOSCript
-#include "ose_conf.h"
-#include "libose/ose_assert.h"
-#include "libose/ose_util.h"
-#include "libose/ose_context.h"
-#include "libose/ose_stackops.h"
-#include "libose/ose_vm.h"
-#include "libose/ose_print.h"
-#include "o.se.stdlib/ose_stdlib.h"
-
+// OSE libraries. installed with MicroOSCript Trying out replacing MicroOSCRIPT
+// #include "ose_conf.h"
+// #include "libose/ose_assert.h"
+// #include "libose/ose_util.h"
+// #include "libose/ose_context.h"
+// #include "libose/ose_stackops.h"
+// #include "libose/ose_vm.h"
+// #include "libose/ose_print.h"
+// #include "o.se.stdlib/ose_stdlib.h"
+// New OSC - A UDP instance to let us send and receive packets over UDP
+WiFiUDP Udp;                        
 
 // ADHOC MODE index.html served in ad hoc mode
 #include "index.h"
@@ -191,10 +196,11 @@ static RTC_DS3231 rtc;
 #endif
 
 static Adafruit_AS7341 as7341;
-static MicrOSCriptESP32 o;
+// replacing with standard OSC
+// static MicrOSCriptESP32 o; 
 static WebServer server(adhoc_http_port);
 static Preferences prefs;
-static String revisionDate = "15MAR2024"; //set software revision date
+static String revisionDate = "21SEPT2024"; //set software revision date
 
 // LIGHT SENSOR CONFIGURATION  
 uint8_t ATIME = 29; // sets variables for light sensor config
@@ -239,9 +245,11 @@ static bool dl_color_sensor_online = false;
 
 static bool light_sensor_online = false;
 
+//OSC variables
 static IPAddress oscipaddr;
 static int oscport;
 static bool oscsend;
+const unsigned int localPort = 20000;        // local port to listen for OSC packets (actually not used for sending)
 
 static unsigned char macaddr[6];
 #define MACADDRSTR_SIZE 18
@@ -279,7 +287,7 @@ void formatJSON(struct color color,
                 char *buf,
                 size_t buflen)
 {
-    StaticJsonDocument<1024> doc;
+    JsonDocument doc;
     
     doc["MAC_ID"] =  macaddrstr;   //macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5];  //remove if UUID will work.
     doc["F1_415"] = color.values[0];
@@ -657,37 +665,37 @@ static uint32_t dl_now_unixtime(void)
 // currently the OSC Time message shows up as unknown data type and value in isadora and max.
 // for troubleshooting Would like to have time in human time go to OSC as happen with AWS
 // Other OSC desires - confirmation of publication to AWS 
-
+/// CHANGE OSC SOURCE
 #ifdef RTC_MAX31343
-static void pushTimeMsg(ose_bundle vm_s, uint32_t sec, uint32_t fsec) 
-{
-    ose_pushMessage(vm_s, "/time", strlen("/time"),
-                    1, OSETT_TIMETAG, dl_now(), 0);
-}
+// static void pushTimeMsg(ose_bundle vm_s, uint32_t sec, uint32_t fsec) 
+// {
+//    ose_pushMessage(vm_s, "/time", strlen("/time"),
+//                    1, OSETT_TIMETAG, dl_now(), 0);
+// }
 
-static void now(ose_bundle osevm)
-{
-    ose_bundle vm_s = OSEVM_STACK(osevm);
+// static void now(ose_bundle osevm)
+// {
+//    ose_bundle vm_s = OSEVM_STACK(osevm);
     // ose_drop(vm_s);
     // DateTime d = rtc.now();
     // ose_pushTimetag(vm_s, d.unixtime() + 2208988800UL, 0);
-    pushTimeMsg(vm_s, dl_now(), 0);
-}
+//    pushTimeMsg(vm_s, dl_now(), 0);
+//}
 #else
-static void pushTimeMsg(ose_bundle vm_s, uint32_t sec, uint32_t fsec) 
-{
-    ose_pushMessage(vm_s, "/time", strlen("/time"),
-                    1, OSETT_TIMETAG, dl_now(), 0);
-}
+//static void pushTimeMsg(ose_bundle vm_s, uint32_t sec, uint32_t fsec) 
+// {
+//    ose_pushMessage(vm_s, "/time", strlen("/time"),
+//                    1, OSETT_TIMETAG, dl_now(), 0);
+//}
 
-static void now(ose_bundle osevm)
-{
-    ose_bundle vm_s = OSEVM_STACK(osevm);
+//static void now(ose_bundle osevm)
+//{
+ //   ose_bundle vm_s = OSEVM_STACK(osevm);
     // ose_drop(vm_s);
     // DateTime d = rtc.now();
     // ose_pushTimetag(vm_s, d.unixtime() + 2208988800UL, 0);
-    pushTimeMsg(vm_s, dl_now(), 0);
-}
+//    pushTimeMsg(vm_s, dl_now(), 0);
+//}
 #endif
 ////////////////////////////////////////////////////////////
 // color sensor
@@ -707,80 +715,110 @@ static struct color getColor(void)
     return c;
 }
 
-static void pushColorMsg(ose_bundle vm_s, struct color color)
-{
-    ose_pushMessage(vm_s, "/color", strlen("/color"), 12,
-                    OSETT_INT32, color.values[0],
-                    OSETT_INT32, color.values[1],
-                    OSETT_INT32, color.values[2],
-                    OSETT_INT32, color.values[3],
-                    OSETT_INT32, color.values[6],
-                    OSETT_INT32, color.values[7],
-                    OSETT_INT32, color.values[8],
-                    OSETT_INT32, color.values[9],
-                    OSETT_INT32, color.values[10],
-                    OSETT_INT32, color.values[11],
-                    OSETT_INT32, color.values[12]);
-}
+// static void pushColorMsg(ose_bundle vm_s, struct color color)
+// {
+//    ose_pushMessage(vm_s, "/color", strlen("/color"), 12,
+//                    OSETT_INT32, color.values[0],
+//                    OSETT_INT32, color.values[1],
+//                    OSETT_INT32, color.values[2],
+//                    OSETT_INT32, color.values[3],
+//                    OSETT_INT32, color.values[6],
+//                    OSETT_INT32, color.values[7],
+//                    OSETT_INT32, color.values[8],
+//                    OSETT_INT32, color.values[9],
+//                    OSETT_INT32, color.values[10],
+//                    OSETT_INT32, color.values[11],
+//                    OSETT_INT32, color.values[12]);
+// }
 
-static void color(ose_bundle osevm)
-{
-    ose_bundle vm_s = OSEVM_STACK(osevm);
+// OSC Color Bundle
+static void osc_color_send() //renamed Color to osc_color_send
+{  
+    // ose_bundle vm_s = OSEVM_STACK(osevm);
     // ose_drop(vm_s);
     // ose_pushInt32(vm_s, 33);
+    //pushColorMsg(vm_s, color);
     struct color color = getColor();
-    pushColorMsg(vm_s, color);
-}
-// send ASTEP
-static void pushASTEPMsg(ose_bundle vm_s, uint16_t ASTEP)
-{
-    ose_pushMessage(vm_s, "/astep", strlen("/astep"), 1,
-                    OSETT_INT32, ASTEP);
-                 
+    OSCBundle colorbndl;
+    osctime_t timetag;
+    colorbndl.add("/color/415").add((int32_t)color.values[0]);
+    colorbndl.add("/color/445").add((int32_t)color.values[1]);
+    colorbndl.add("/color/480").add((int32_t)color.values[2]);
+    colorbndl.add("/color/515").add((int32_t)color.values[3]);
+    colorbndl.add("/color/555").add((int32_t)color.values[6]);
+    colorbndl.add("/color/590").add((int32_t)color.values[7]);
+    colorbndl.add("/color/630").add((int32_t)color.values[8]);
+    colorbndl.add("/color/680").add((int32_t)color.values[9]);
+    colorbndl.add("/color/VIS").add((int32_t)color.values[10]);
+    colorbndl.add("/color/NIR").add((int32_t)color.values[11]);
+    colorbndl.add("/color/astep").add((uint16_t)ASTEP);
+    colorbndl.add("/color/atime").add((uint8_t)ATIME);
+    colorbndl.add("/color/gain").add((uint16_t)GAIN);
+    colorbndl.add("/color/time").add(timetag); //OSC Message timetag
+    colorbndl.add("/color/rtctime").add((uint32_t)dl_now_unixtime); // uint32_t dl_now_unixtime
+
+    Udp.beginPacket(oscipaddr, oscport); 
+    colorbndl.setTimetag(oscTime());
+    colorbndl.send(Udp); // send the bytes to the SLIP stream
+    Udp.endPacket(); // mark the end of the OSC Packet
+    colorbndl.empty(); // empty the bundle to free room for a new one
+
+    
 }
 
-static void ASTEPMSG(ose_bundle osevm)
-{
-    ose_bundle vm_s = OSEVM_STACK(osevm);
+// send ASTEP - REPLACING OSE WITH CNMAT
+//static void pushASTEPMsg(ose_bundle vm_s, uint16_t ASTEP)
+//{
+ //   ose_pushMessage(vm_s, "/astep", strlen("/astep"), 1,
+ //                   OSETT_INT32, ASTEP);
+ //                
+// }
+
+// REPLACING OSE WITH CNMAT OSC
+//static void ASTEPMSG(ose_bundle osevm)
+//{
+  //  ose_bundle vm_s = OSEVM_STACK(osevm);
     // ose_drop(vm_s);
     // ose_pushInt32(vm_s, 33);
-   ASTEP;
-    pushASTEPMsg(vm_s, ASTEP);
-}
+ //  ASTEP;
+ //   pushASTEPMsg(vm_s, ASTEP);
+//}
 
-/// send ATIME
-static void pushATIMEMsg(ose_bundle vm_s, uint8_t ATIME)
-{
-    ose_pushMessage(vm_s, "/atime", strlen("/atime"), 1,
-                    OSETT_INT32, ATIME);
-                 
-}
+/// send ATIME // REPLACING OSE WITH CNMAT OSC
+// static void pushATIMEMsg(ose_bundle vm_s, uint8_t ATIME)
+//{
+ //   ose_pushMessage(vm_s, "/atime", strlen("/atime"), 1,
+  //                  OSETT_INT32, ATIME);
+ //                
+//}
 
-static void ATIMEMSG(ose_bundle osevm)
-{
-    ose_bundle vm_s = OSEVM_STACK(osevm);
+// REPLACING OSE WITH CNMAT OSC
+// static void ATIMEMSG(ose_bundle osevm)
+// {
+//   ose_bundle vm_s = OSEVM_STACK(osevm);
     // ose_drop(vm_s);
     // ose_pushInt32(vm_s, 33);
-   ATIME;
-    pushATIMEMsg(vm_s, ATIME);
-}
+ //  ATIME;
+ //   pushATIMEMsg(vm_s, ATIME);
+// }
 
-/// send gain
-static void pushGAINMsg(ose_bundle vm_s, uint16_t GAIN)
-{
-    ose_pushMessage(vm_s, "/gain", strlen("/gain"), 1,
-                    OSETT_INT32, GAIN);
-                 
-}
+/// send gain REPLACING OSE WITH CNMAT OSC
+// static void pushGAINMsg(ose_bundle vm_s, uint16_t GAIN)
+// {
+//    ose_pushMessage(vm_s, "/gain", strlen("/gain"), 1,
+//                    OSETT_INT32, GAIN);
+ //                
+// }
 
-static void GAINMSG(ose_bundle osevm)
-{
-    ose_bundle vm_s = OSEVM_STACK(osevm);
+// REPLACING OSE WITH CNMAT OSC
+// static void GAINMSG(ose_bundle osevm)//
+// {
+//    ose_bundle vm_s = OSEVM_STACK(osevm);
     // ose_drop(vm_s);
     // ose_pushInt32(vm_s, 33);
-   GAIN;
-    pushGAINMsg(vm_s, GAIN);
-}
+ //  GAIN;
+ //   pushGAINMsg(vm_s, GAIN);
+// }
 
 // timeout check for reading
 bool readingTimeOutCheck()
@@ -1081,19 +1119,19 @@ DateTime now = rtc.now();
 
 #endif
 
-
-void dl_bind_OSC_functions(void)
-{
-    o.bindfn("/o/rtc/now", now);
-    o.bindfn("/o/color", color);
-}
+// REPLACING OSE WITH CNMAT OSC
+// void dl_bind_OSC_functions(void)
+// {
+ //   o.bindfn("/o/rtc/now", now);
+ //   o.bindfn("/o/color", color);
+// }
 
 void dl_boot_adhoc(void) // called from setup if adhoc button is pressed
 {
     Serial.printf("Entering ad hoc mode...");
-    o.init();
-    delay(1000);
-    dl_bind_OSC_functions();
+    // o.init();
+   //  delay(1000);
+   // dl_bind_OSC_functions();
     delay(1000);
     adhoc_mode = true;
     prefs.begin("dl", false); // false => r/w
@@ -1150,14 +1188,29 @@ void dl_boot_client(void)
     {
         Serial.printf("Connecting to (%s)...",
                       ssid.c_str());
-        o.init(ssid.c_str(), pwd.c_str(), (unsigned int)15000); // need some type of error catch to start logging data locally if wifi fails
+        // start of new OSC connection replacing microOSCscript with OSC from CNMAT
+        // o.init(ssid.c_str(), pwd.c_str(), (unsigned int)15000);
+        WiFi.begin(ssid, pwd); 
+        while (WiFi.status() != WL_CONNECTED) {
+            delay(500);
+            Serial.print(".");
+            }
         delay(500);
+        Serial.println("");
+        Serial.println("WiFi connected");
         Serial.printf("done\n");
-        Serial.printf("IP address: %s\n",
-                      o.wifiIPAddress().c_str());
-        Serial.printf("Listening for OSC on UDP port %d\n",
-                      o.udpPort());
-        dl_bind_OSC_functions();
+        Serial.println(WiFi.localIP());
+        Serial.println("Starting UDP");
+        Udp.begin(localPort);
+        Serial.print("Local OSC port: ");
+        Serial.println(localPort); 
+         
+//       Serial.printf("IP address: %s\n",
+//                     o.wifiIPAddress().c_str());
+//       Serial.printf("Listening for OSC on UDP port %d\n",
+//                      o.udpPort());
+//        dl_bind_OSC_functions();
+
         //mdns_hostname_set(host); // wifi init for OTA
         if (!MDNS.begin(host)) {
           Serial.println("Error setting up MDNS responder!");
@@ -1405,8 +1458,10 @@ void loop()
      }
     
         if(rtc_sqw_fell) // this is the main action loop called on every falling square wave.
-        {   
-          ose_bundle vm_s = o.stack();
+        { // replacing OSE with OSCBundle  
+          //ose_bundle vm_s = o.stack();
+          //OSCBundle bndl;
+          //osctime_t timetag;
             
           if (ledstate = 1) 
             {toggleLED();}
@@ -1505,29 +1560,33 @@ void loop()
                     // an address and a port, send a bundle to them.
                     // see microOSC library for details
                     
-                    pushColorMsg(vm_s, color);
-                    pushASTEPMsg(vm_s, ASTEP);
-                    pushATIMEMsg(vm_s, ATIME);
-                    pushGAINMsg(vm_s, GAIN);
-                    pushTimeMsg(vm_s, rtc_now_unixtime, 0);
-                    ose_bundleAll(vm_s);
-                    o.udpSendElemTo(oscipaddr, oscport, vm_s);
-                    ose_clear(o.stack());
+                    // trying  to use OSCBundle instead of MicroOSCScript
+                    // pushColorMsg(vm_s, color);
+                    // pushASTEPMsg(vm_s, ASTEP);
+                    // pushATIMEMsg(vm_s, ATIME);
+                    // pushGAINMsg(vm_s, GAIN);
+                    // pushTimeMsg(vm_s, rtc_now_unixtime, 0);
+                    // ose_bundleAll(vm_s);
+                    // o.udpSendElemTo(oscipaddr, oscport, vm_s);
+                    // ose_clear(o.stack());
+                    osc_color_send();
+
                     Serial.println("sent OSC");
                 }
             } // end of if should perform
         }
-        if(o.serviceInterrupts())
-        {
-            o.eval();
-            ose_clear(o.stack());
-        }
+       // if(o.serviceInterrupts()) // pulling out OSE
+       // {
+       //     o.eval();
+       //     ose_clear(o.stack());
+       // }
     
-        if(o.slipSerialRead())
-        {
-            o.eval();
-            ose_clear(o.stack());
-        }
+        //if(o.slipSerialRead()) // pulling out OSE
+        //{
+        //    o.eval();
+        //    ose_clear(o.stack());
+        //}
+
         // HARDWARE SERIAL TIME SYNC TO SYNC DEVICES USING THE RX/TX PINS. ONLY FOR INITIAL CONFIG USE
         // also uncomment HWSERIAL
         // if(DL_HWSERIAL.available() > 0)
@@ -1561,12 +1620,12 @@ void loop()
         //     }
         // }
     
-        if(o.udpRead())
-        {
-            Serial.printf("udp\n");
-            o.eval();
-            ose_clear(o.stack());
-        }
+        // if(o.udpRead())  // pulling out OSE
+        // {
+        //    Serial.printf("udp\n");
+        //    o.eval();
+        //    ose_clear(o.stack());
+        //}
 
 // Serial.println("end of loop");
 

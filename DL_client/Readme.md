@@ -1,5 +1,5 @@
 # This file is the client for the Domestic Light Sensor.
-# REV 15 MARCH 2024
+# REV 21 SEPT 2024 - NEW OSC Branch
 This update adds WEBOTA functionality, improved bi-directional communication with MQTT, robust disconnect improvements. 
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
