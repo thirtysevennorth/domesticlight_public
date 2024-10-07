@@ -755,7 +755,7 @@ static void osc_color_send() //renamed Color to osc_color_send
     colorbndl.add("/color/atime").add((uint8_t)ATIME);
     colorbndl.add("/color/gain").add((uint16_t)GAIN);
     colorbndl.add("/color/time").add(timetag); //OSC Message timetag
-    colorbndl.add("/color/rtctime").add((uint32_t)dl_now_unixtime); // uint32_t dl_now_unixtime
+    colorbndl.add("/color/rtctime").add((uint32_t)sys_now_unixtime); // uint32_t dl_now_unixtime
 
     Udp.beginPacket(oscipaddr, oscport); 
     colorbndl.setTimetag(oscTime());
@@ -1476,7 +1476,16 @@ void loop()
           #else
           float rtc_temp = rtc.getTemperature();
           #endif
-          
+          if(oscsend)
+                {
+                    // if the Send OSC checkbox was ticked, and we have
+                    // an address and a port, send a bundle to them.
+                    osc_color_send();
+                    Serial.print("sent OSC to ");
+                    Serial.print(oscipaddr);
+                    Serial.print(", port ");
+                    Serial.println(oscport);
+                }
          
          int should_perform = sampleCounter == 0;
          sampleCounter = (sampleCounter + 1) % dataFrequency;
@@ -1553,9 +1562,9 @@ void loop()
                     client.loop();
                     toggleLED(); // data read and transmit complete. turn on LED
                 
-            
-              if(oscsend)
-                {
+              // moving OSC sending to every second 
+              //if(oscsend)
+               // {
                     // if the Send OSC checkbox was ticked, and we have
                     // an address and a port, send a bundle to them.
                     // see microOSC library for details
@@ -1569,10 +1578,10 @@ void loop()
                     // ose_bundleAll(vm_s);
                     // o.udpSendElemTo(oscipaddr, oscport, vm_s);
                     // ose_clear(o.stack());
-                    osc_color_send();
+                 //   osc_color_send();
 
-                    Serial.println("sent OSC");
-                }
+                //    Serial.println("sent OSC");
+               // }
             } // end of if should perform
         }
        // if(o.serviceInterrupts()) // pulling out OSE
