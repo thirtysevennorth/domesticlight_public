@@ -1,4 +1,7 @@
 // SEE README.MD file for more details, credits, license.
+
+////// Currently intended to be used w/ esp build 3.x BUT fastLED causes a boot loop crash due to this issue
+// https://github.com/FastLED/FastLED/issues/1656 not resovled as of OCT 13, 2024
 // Released under an MIT License, Copyright 2024 37 North, Inc., Ian Winters and John Macallum.
 // NEW OSC BRANCH
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
@@ -63,6 +66,7 @@
 #include <WebServer.h>
 #include <Preferences.h>
 #include <cstdio>
+#include <time.h>
 
 #ifdef AS7343
 #include <AS7343.h>
@@ -70,7 +74,7 @@
 #include <Adafruit_AS7341.h>
 #endif
 
-#include <time.h>
+
 #include <ArduinoJson.h>
 
 #include <Arduino.h>
@@ -740,7 +744,7 @@ static void osc_color_send() //renamed Color to osc_color_send
     //pushColorMsg(vm_s, color);
     struct color color = getColor();
     OSCBundle colorbndl;
-    osctime_t timetag;
+   // uint32_t timetag = dl_now_unixtime();
     colorbndl.add("/color/415").add((int32_t)color.values[0]);
     colorbndl.add("/color/445").add((int32_t)color.values[1]);
     colorbndl.add("/color/480").add((int32_t)color.values[2]);
@@ -751,14 +755,14 @@ static void osc_color_send() //renamed Color to osc_color_send
     colorbndl.add("/color/680").add((int32_t)color.values[9]);
     colorbndl.add("/color/VIS").add((int32_t)color.values[10]);
     colorbndl.add("/color/NIR").add((int32_t)color.values[11]);
-    colorbndl.add("/color/astep").add((uint16_t)ASTEP);
-    colorbndl.add("/color/atime").add((uint8_t)ATIME);
-    colorbndl.add("/color/gain").add((uint16_t)GAIN);
-    colorbndl.add("/color/time").add(timetag); //OSC Message timetag
-    colorbndl.add("/color/rtctime").add((uint32_t)sys_now_unixtime); // uint32_t dl_now_unixtime
+   // colorbndl.add("/color/astep").add((int32_t)ASTEP);
+   // colorbndl.add("/color/atime").add((int32_t)ATIME);
+   // colorbndl.add("/color/gain").add((int32_t)GAIN);
+  //  colorbndl.add("/color/time").add(timetag); //OSC Message timetag
+   // colorbndl.add("/color/rtctime").add((int32_t)dl_now_unixtime); // uint32_t dl_now_unixtime
 
     Udp.beginPacket(oscipaddr, oscport); 
-    colorbndl.setTimetag(oscTime());
+    // colorbndl.setTimetag(dl_now_unixtime());
     colorbndl.send(Udp); // send the bytes to the SLIP stream
     Udp.endPacket(); // mark the end of the OSC Packet
     colorbndl.empty(); // empty the bundle to free room for a new one
