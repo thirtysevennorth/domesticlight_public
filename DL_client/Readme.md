@@ -1,5 +1,5 @@
 # This file is the client for the Domestic Light Sensor.
-# REV 5 OCT 2024 - NEW OSC Branch
+# REV 10 OCT 2024 - NEW OSC Branch
 This update adds new OSC library, ESP 3.0 support, and updated JSON support for new data types. 
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
@@ -39,9 +39,7 @@ To test:
  
 #  KNOWN BUGS 
  * The wifi network selection does not reliably connect to wifi networks without a password.
- * The OSC message for current Unixtime does not transmit correctly to Isadora and generates an unknown value type
- * If the device enters Adhoc mode and no connection is made within 1 to 3 minutes the device restarts
-
+ 
 # LICENSES AND CREDITS 
  * the DL_client was created for light sensor client of Domestic Light, a media art project by Ian Winters
  * for more info about the project, or to participate please visit https://domesticlight.art
@@ -56,3 +54,4 @@ To test:
 * ESP WebOTA  https://github.com/scottchiefbaker/ESP-WebOTA MIT License Scott Baker 2019
 * AnalogRTCLib  Copyright(C) Analog Devices Inc.
 * ESP32S3 and Arduino libraries by Espressif Systems 2024
+* OSC  https://github.com/CNMAT/OSC by Yotam Mann, Adrian Freed, CNMAT. 2013
