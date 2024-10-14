@@ -1,6 +1,6 @@
 # This file is the client for the Domestic Light Sensor.
-# REV 15 MARCH 2024
-This update adds WEBOTA functionality, improved bi-directional communication with MQTT, robust disconnect improvements. 
+# REV 5 OCT 2024 - NEW OSC Branch
+This update adds new OSC library, ESP 3.0 support, and updated JSON support for new data types. 
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
 USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino to STORE SERVER CREDENTIALS IN PERM STORAGE.
@@ -49,11 +49,10 @@ To test:
  * this code is distributed under an MIT License.
 
 # Additional libraries used include the following and incorporate their respective license terms:
-* MicroOSCript, OSE https://github.com/0Z3/ose MIT License (c) 2020 John Macallum
 * PubSubClient https://github.com/knolleary/pubsubclient MIT License C(c) 2008-2020 Nicholas O'Leary
 * Adafruit AS7341 https://github.com/adafruit/Adafruit_AS7341 Software License Agreement (BSD License) c) 2019 Bryan Siepert for Adafruit Industries
 * Adafruit RTCLib https://github.com/adafruit/RTClib MIT License Adafruit 2019
-* ArduinoJson  https://github.com/bblanchon/ArduinoJson Beniot BLANCHON MIT 2023
+* ArduinoJson  https://github.com/bblanchon/ArduinoJson Beniot BLANCHON MIT 2024
 * ESP WebOTA  https://github.com/scottchiefbaker/ESP-WebOTA MIT License Scott Baker 2019
 * AnalogRTCLib  Copyright(C) Analog Devices Inc.
-* ESP32S3 and Arduino libraries by Espressif Systems
+* ESP32S3 and Arduino libraries by Espressif Systems 2024
