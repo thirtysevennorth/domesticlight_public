@@ -744,7 +744,8 @@ static void osc_color_send() //renamed Color to osc_color_send
     //pushColorMsg(vm_s, color);
     struct color color = getColor();
     OSCBundle colorbndl;
-   // uint32_t timetag = dl_now_unixtime();
+    time_t currentTime;
+    uint32_t timetag = time(&currentTime);
     colorbndl.add("/color/415").add((int32_t)color.values[0]);
     colorbndl.add("/color/445").add((int32_t)color.values[1]);
     colorbndl.add("/color/480").add((int32_t)color.values[2]);
@@ -755,14 +756,14 @@ static void osc_color_send() //renamed Color to osc_color_send
     colorbndl.add("/color/680").add((int32_t)color.values[9]);
     colorbndl.add("/color/VIS").add((int32_t)color.values[10]);
     colorbndl.add("/color/NIR").add((int32_t)color.values[11]);
-   // colorbndl.add("/color/astep").add((int32_t)ASTEP);
-   // colorbndl.add("/color/atime").add((int32_t)ATIME);
-   // colorbndl.add("/color/gain").add((int32_t)GAIN);
-  //  colorbndl.add("/color/time").add(timetag); //OSC Message timetag
-   // colorbndl.add("/color/rtctime").add((int32_t)dl_now_unixtime); // uint32_t dl_now_unixtime
+    colorbndl.add("/color/astep").add((int32_t)ASTEP);
+    colorbndl.add("/color/atime").add((int32_t)ATIME);
+    colorbndl.add("/color/gain").add((int32_t)GAIN);
+    //colorbndl.add("/color/time").add(timetag); //OSC Message timetag doesnt compile
+    colorbndl.add("/color/rtctime").add((int32_t)timetag); // uint32_t dl_now_unixtime
 
     Udp.beginPacket(oscipaddr, oscport); 
-    // colorbndl.setTimetag(dl_now_unixtime());
+   // colorbndl.setTimetag(time());
     colorbndl.send(Udp); // send the bytes to the SLIP stream
     Udp.endPacket(); // mark the end of the OSC Packet
     colorbndl.empty(); // empty the bundle to free room for a new one
@@ -1473,6 +1474,7 @@ void loop()
           ntp_sec_counter = (ntp_sec_counter + 1);
           struct color color = getColor(); // actual sensor reading
           Serial.println("color read complete");
+          //dl_now_unixtime();
           uint32_t rtc_now_unixtime = dl_now_unixtime();
           uint32_t sys_now_unixtime = time(NULL);
           #ifdef RTC_MAX31343
