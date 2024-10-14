@@ -1,8 +1,12 @@
 # DOMESTIC LIGHT: working repository for the Domestic Light Project. 
 * Learn more and participate at https://domesticlight.art 
 
-# SOFTWARE UPDATE March 15 2024
-This March 15st, 2024 version of the project address the following issues:
+# SOFTWARE UPDATE Oct 10 2024
+This Oct 10, 2024 version of the project address the following issues:
+* New OSC library and faster OSC message sending
+* Prep for esp board version 3.x
+
+Plus previous corrections
 1) provides status monitoring and automatic reconnect for AWS to address wifi and connection issues
 2) preps devices for use of additional I2C connection for add-on sensor
 3) adds WebOTA update capability to allow for updates of the device from a webpage without an IDE
@@ -15,14 +19,14 @@ Please use the build appropriate to your board.
 
 # OVERVIEW OF PROJECT 
 The primary working file for sensor code is DL_client
-REV date 15 MAR 2024
+REV date 10 OCT 2024
 
 * Github Repository for code
 https://github.com/thirtysevennorth/domesticlight_public
 * Website
 https://domesticlight.art
 
-Files are intended to be built using the Arduino IDE v2.32 or later and is for use as part of the Domestic Light project.
+Files are intended to be built using the Arduino IDE v2.3.3 or later and is for use as part of the Domestic Light project.
 
 # TO UPDATE AN EXISTING BOARD
 1) install the required libraries and board package above in the Arduino IDE
@@ -36,7 +40,7 @@ NOTE: If you continue to have difficulties, some computers  will require that yo
 
 
 # REQUIRED BOARD FILES, LIBRARIES, DEPENDENCIES FOR ARDUINO IDE
-* PREREQUISITE:	INSTALL THE ARDUINO IDE 2.32 or later located at 
+* PREREQUISITE:	INSTALL THE ARDUINO IDE 2.3.3 or later located at 
 * https://www.arduino.cc/en/software#future-version-of-the-arduino-ide
 
 **Install ESP32S3 BOARD file:
@@ -44,7 +48,7 @@ If you have not built a project in Arduino 2.x for ESP32-S3 on your machine plea
 1) In the Arduino IDE > Preferences > Additional Boards Manager URL add the URL for the 
 Espressif Arduino ESP32 boards
 https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_dev_index.json
-2) In Boards Manager add "esp32" by Espressif Systems. This should be on V 2.0.14. **Do not use the V.3.0 alpha release** of the esp32 board file.
+2) In Boards Manager add "esp32" by Espressif Systems. This should be on V 2.0.17. **Do not use the V.3.0 alpha release** of the esp32 board file.
 3) If this is a new Arduino IDE install on a MAC system you may be prompted to install Xcode command line tools. The IDE will prompt you, or you can enter the following command in Terminal "xcode-select --install" and follow the prompts.
 4) the UM Feather S3 boards use the USB > Serial driver. You should not need to install any serial driver. 
 
@@ -55,9 +59,8 @@ https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32
 4) ArduinoJson https://arduinojson.org
 5) AnalogRTClib by Analog Devices / Maxim - please see readme and use version included with this library that includes bugfix edit to the AnalogRTCLib for use with the MAX31343 chip
 6) ESP32-OTA by Scott Baker
+7) OSC by Adrian Freed and CNMAT
 
-** Install the following library manually:
-* MicroOSCcript. Download zip file "https://github.com/thirtysevennorth/domesticlight_public/blob/main/MicrOSCript.zip". Once downloaded add the library to your Arduino Libraries folder. 
 
    END REQUIRED BOARD FILES, LIBRARIES, DEPENDENCIES 
 
@@ -74,4 +77,5 @@ Additional  libraries used under the terms of their license include:
 * [PubSubClient](https://github.com/knolleary/pubsubclient) under an MIT License
 * [AnalogRTCLIB](https://github.com/analogdevicesinc/AnalogRTCLibrary/blob/7f996e41772edafeb7a04c1ae92abd2bdc994f63/src/MAX31343/MAX31343.h) under an MIT License
 * [ESP Web-OTA](https://github.com/scottchiefbaker/ESP-WebOTA) MIT License 
-* MicroOSCript under a license from John Macallum for use in this client software.
+* OSC https://github.com/CNMAT/OSC
+  
