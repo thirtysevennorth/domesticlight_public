@@ -1,5 +1,5 @@
 # This file is the client for the Domestic Light Sensor.
-# REV 10 OCT 2024 - NEW OSC Branch
+# REV 5 DEC 2024 - NEW OSC Branch
 This update adds new OSC library, ESP 3.0 support, and updated JSON support for new data types. 
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 

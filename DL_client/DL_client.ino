@@ -1,7 +1,8 @@
 // SEE README.MD file for more details, credits, license.
 
-////// Currently intended to be used w/ esp build 3.x BUT fastLED causes a boot loop crash due to this issue
-// https://github.com/FastLED/FastLED/issues/1656 not resovled as of OCT 13, 2024
+////// USE with IDE 2.3.3 or later and esp board 3.1.0 or later and fastLED 3.9.4 // update 5 Dec 2024
+// earlier fast led version cause a boot loop 
+// https://github.com/FastLED/FastLED/issues/1656 
 // Released under an MIT License, Copyright 2024 37 North, Inc., Ian Winters and John Macallum.
 // NEW OSC BRANCH
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
@@ -160,7 +161,7 @@ static String AWS_IOT_STATUS_TOPIC;
 #define DL_PIN_BUTTON2 18 // A1 (ADC2) DAC1 NOTE on artist proof and prototype boards IO17 and IO18 have labels reversed
 #define DL_PIN_RTC_SQUARE_WAVE 3 // REV F and after pin is #3
 
-#define DL_PIN_RGB_LED 14 // IO14 is large ws2812b LED on board, IO40 is UM3 builtin ws2812.
+#define DL_PIN_RGB_LED 40 // IO14 is large ws2812b LED on board, IO40 is UM3 builtin ws2812.
 #define DL_PIN_BUILTIN_LED 13
 // #define DL_HWSERIAL Serial0
 #else
@@ -538,7 +539,7 @@ int toggleLED(void)
       leds[0] = CRGB(50,50,50); //white to show adhoc
       FastLED.show();
     }
-    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    digitalWrite(DL_PIN_RGB_LED, ledstate);
     return ledstate;
     }
 
@@ -556,7 +557,7 @@ int toggleLED(void)
        FastLED.show();
        Serial.println("LED ON");
     }
-    digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+    digitalWrite(DL_PIN_RGB_LED, ledstate);
     return ledstate;
     }
 
@@ -1280,11 +1281,13 @@ void setup()
     {
         pinMode(DL_PIN_BUTTON1, INPUT);
         pinMode(DL_PIN_BUILTIN_LED, OUTPUT);
+        pinMode(DL_PIN_RGB_LED, OUTPUT);
     }
 
     // Initialize builtin LED
     {
         digitalWrite(DL_PIN_BUILTIN_LED, ledstate);
+        digitalWrite(DL_PIN_RGB_LED, ledstate);
         ledstate = LOW;
         FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
         leds[0] = CRGB(5,0,0);
@@ -1437,6 +1440,7 @@ void setup()
     // Start WebOTA
     webota.useAuth(uuid.c_str(), "domesticlight"); // setting webota pass to uuid
     webota.init(8080, "/update"); //adding in webota init start
+    digitalWrite(DL_PIN_BUILTIN_LED, 0);
 }
 
 void loop()
