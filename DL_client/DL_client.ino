@@ -1435,8 +1435,17 @@ void setup()
         }
     }
     // Start WebOTA
+  {if(adhoc_mode)
+  {
+      server.handleClient();
+      yield();
+  }
+    else
+    {  
     webota.useAuth(uuid.c_str(), "domesticlight"); // setting webota pass to uuid
     webota.init(8080, "/update"); //adding in webota init start
+    }
+  }
 }
 
 void loop()
