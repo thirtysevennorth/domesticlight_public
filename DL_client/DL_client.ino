@@ -1,13 +1,14 @@
 // SEE README.MD file for more details, credits, license.
-
-////// Currently intended to be used w/ esp build 3.x BUT fastLED causes a boot loop crash due to this issue
-// https://github.com/FastLED/FastLED/issues/1656 not resovled as of OCT 13, 2024
-// Released under an MIT License, Copyright 2024 37 North, Inc., Ian Winters and John Macallum.
-// NEW OSC BRANCH
+// updated 6/21/25 for esp32 3.2x board file or later
+//
+// to build successfully in arduino you must use the esp32 3.2x board file
+// and use the board file rather than arduino IDE versions of wire, fs, spi, and webserver
+//
+// Released under an MIT License, Copyright 2023-2025 37 North, Inc., Ian Winters and John Macallum.
 // USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino
 // AND SERVER credentials were stored in permanent memory.
 
-// this version repalces microOSC Script with Arduino OSC to allow for ESP V3.0 compatabilithy
+// This update uses Arduino OSC to allow for ESP V3.x compatabilithy
 // INITIAL SETUP NOTES
 // For initial set-up boot into ADHOC mode by pressing and holding Button 1 (Left Button), 
 // while pressing and releasing the RESET Button (Right Button). The device will boot into ADHOC MODE
@@ -16,7 +17,6 @@
 // Enter your local WIFI network SSID, and its password which is saved locally on the sensor
 // You can also optionally configure local OSC transmission of the data.
 // TO UPDATE CODE  - UPLOAD binary file to domesticlight.local, user name is your  UUID, and password is domesticlight
-// updated 5 Oct 2024
 
 ///////////////////////////////////////////////////////////
 // Preferences setting and reset
@@ -48,7 +48,7 @@
 ////////////////////////////////////////////////////////////
 
 #include <pgmspace.h>
-// #include <MicrOSCriptESP32.h> replacing microOSCript for ESP v3.0 compatiablity
+
 #include <Wire.h>
 #include <FastLED.h> // LED library for color changing WS2812B
 
@@ -984,10 +984,15 @@ as7341_gain_t AutoGAIN()
 ////////////////////////////////////////////////////////////
 
 void handleRoot()
-{   Serial.println("opened handleRoot");
-    // String s = index_html;
+{
+    Serial.println("opened handleRoot");
     int len = strlen(index_html) + 512;
-    char buf[len];
+    char *buf = (char*)malloc(len);
+    if (!buf) {
+        Serial.println("Failed to allocate memory for index page!");
+        server.send(500, "text/plain", "Internal Server Error");
+        return;
+    }
     snprintf(buf, len, index_html,
              macaddrstr,
              prefs.getString("uuid", "").c_str(),
@@ -995,11 +1000,12 @@ void handleRoot()
              prefs.getString("pwd", "").c_str(),
              prefs.getString("oscipaddr", "").c_str(),
              prefs.getInt("oscport", 20000));
-          
     String s = buf;
     server.send(200, "text/html", s);
+    free(buf);
     leds[0] = CRGB(100,100,100); // bright white to show entered adhoc mode
     FastLED.show();
+    delay(100);
 }
 
 void handleGetColor()
@@ -1018,6 +1024,7 @@ void handleGetColor()
     server.send(200, "text/plain", s);
     leds[0] = CRGB(100,100,100); // bright white to show entered adhoc mode
     FastLED.show(); 
+    delay(100);
 }
 
 void handleGet()
@@ -1057,12 +1064,13 @@ void handleGet()
         prefs.putBool("oscsend", false);
         Serial.printf("%s: Send OSC: false\n", __func__);
     }
-    prefs.end();
+    
     leds[0] = CRGB(0,200,0); // bright green flash to show adhoc mode success
     FastLED.show();
     Serial.println("saved config info, restarting");
    // WiFi.disconnect();
     delay(1500);
+    prefs.end();
     ESP.restart();
 }
 
@@ -1301,6 +1309,10 @@ void setup()
         leds[0] = CRGB(50,50,50);
         FastLED.show();
         delay(1000);
+        // *** Wait for button release to avoid repeated adhoc entry ***
+        while(digitalRead(DL_PIN_BUTTON1) == LOW) {
+            delay(10);
+        }
     }
     else
     {
@@ -1459,7 +1471,7 @@ void loop()
     {  
      webota.handle();
      client.loop(); // check for any incoming message
-     if(readingTimeOutCheck) {
+     if(readingTimeOutCheck()) {
        uint32_t sys_now_unixtime = time(NULL);
        AutoGAIN();
        // Serial.print("sqw wave fell: ");
@@ -1477,7 +1489,7 @@ void loop()
           //OSCBundle bndl;
           //osctime_t timetag;
             
-          if (ledstate = 1) 
+          if (ledstate == 1) 
             {toggleLED();}
           Serial.println("starting color read.");
           ntp_sec_counter = (ntp_sec_counter + 1);

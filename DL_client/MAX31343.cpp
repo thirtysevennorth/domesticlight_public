@@ -79,7 +79,8 @@ int MAX31343::read_register(uint8_t reg, uint8_t *buf, uint8_t len/*=1*/)
     }
 
     // Read    
-    m_i2c->requestFrom((char)m_slave_addr, (char)len, true);
+   // m_i2c->requestFrom((char)m_slave_addr, (char)len, true); to match ESP32 WIRE
+		m_i2c->requestFrom((uint8_t)m_slave_addr, (size_t)len, true);
 
     while (m_i2c->available()) { // slave may send less than requested
         buf[counter++] = m_i2c->read(); // receive a byte as character

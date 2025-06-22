@@ -66,7 +66,7 @@ h1 {text-align: center;
 
     <div class="myDiv">
       <h3>Welcome to the Domestic Light project. Thanks so much for participating. </h3>
-      <p>For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a>. Rev 10 Oct 2024</p>
+      <p>For more information and support visit <a href="https://domesticlight.art/technical-information">https://domesticlight.art/technical-information/</a>. Rev 21 June 2025</p>
       <h2>Your Sensor's Raw Color Values:<span id="colorvalue"> 0 </span></h2>
       <h2>Your Sensor's MAC Address:<span id="macaddress">%s</span></h2>
       <h2>Your Sensor's Site ID: <span id="uuid">%s</span></h2> 
@@ -85,9 +85,10 @@ h1 {text-align: center;
         <hr><br>
         <h3>SEND OSC?<input type="checkbox" name="oscsend" value="Send OSC"> </h3> 
         <h3>OSC<br>TARGET IP:&nbsp;&nbsp;<input type="text" name="oscipaddr" value="%s"></h3>
-        <h3>PORT:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="number" name="oscport" value="%d" min="1" max="65535"></h3>
+        <h3>PORT:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="number" name="oscport" value="%ld" min="1" max="65535"></h3>
         <hr>
         <br><input type="submit" value="SUBMIT AND RESTART">
+        <form action="/get" onsubmit="alert('Configuration saved! Device will restart.');">
         </form><br>
       </div>
   </section>

@@ -1,6 +1,8 @@
 # This file is the client for the Domestic Light Sensor.
-# REV 10 OCT 2024 - NEW OSC Branch
-This update adds new OSC library, ESP 3.0 support, and updated JSON support for new data types. 
+# REV 21 June 2025
+This update adds ESP 3.2x support, and resolves a type error in the MAX31343 cpp file. 
+It is intended to be built with arduino ide 2.3.5 or later, and the espressif esp32 board file for arduino IDE version 3.2.0 or later.
+To build successfully ensure that you use the board file versions of the wire, fs, spi, and webserver libraries.
 
 ## SEE READ ME IN REPO DIRECTORY FOR OVERALL PROJECT INFO AND SETUP DETAILS. 
 USE OF THIS SKETCH REQUIRES THAT THE BOARD WAS FLASHED FIRST WITH DL_client_INIT.ino to STORE SERVER CREDENTIALS IN PERM STORAGE.
@@ -10,10 +12,10 @@ __________________
 # INITIAL USER SETUP NOTES
 # ADHOC MODE / WIFI Config. 
   1) press and hold Button 1 (Left Button), while pressing and releasing Button 2/  RESET Button (Right Button).
-  2)  release Button 1 - the device will boot into "ADHOC MODE"
-  3)  on a computer or phone look for the WIFI Network "DomesticLight".
-  4)  Connect to it via wifi, and then using a browser go to http://192.168.4.1.
-  5)  Enter the following : 
+  2) wait 5 seconds or until you see "entering adhoc mode" in the serial monitor. then release Button 1
+  3) on a computer or phone look for the WIFI Network "DomesticLight".
+  4) Connect to it via wifi, and then using a browser go to http://192.168.4.1.
+  5) Enter the following : 
      * your local WIFI network SSID, and its password.
      * You can also optionally configure local OSC transmission of the data.
     press "submit", wait a few seconds and reset the device
@@ -31,7 +33,7 @@ To test:
  * To set data collection frequency set the data frequency counter  in seconds. Please do not adjust unless asked.
  * To factory reset uncomment #define DL_FACTORY_RESET. This will require the board to be reflashed with the DL_client_INIT sketch.
 
-# TO DO / ROADMAP 
+# ROADMAP 
   * Provide on board RGB conversion to print to local OSC.
   * Add wifi / power loss buffer code that will store data when wifi is not available. 
   * Provide support for connection to institutional wifi networks which require an X509 certificate. 
@@ -50,8 +52,8 @@ To test:
 * PubSubClient https://github.com/knolleary/pubsubclient MIT License C(c) 2008-2020 Nicholas O'Leary
 * Adafruit AS7341 https://github.com/adafruit/Adafruit_AS7341 Software License Agreement (BSD License) c) 2019 Bryan Siepert for Adafruit Industries
 * Adafruit RTCLib https://github.com/adafruit/RTClib MIT License Adafruit 2019
-* ArduinoJson  https://github.com/bblanchon/ArduinoJson Beniot BLANCHON MIT 2024
+* ArduinoJson  https://github.com/bblanchon/ArduinoJson Beniot BLANCHON MIT 2025
 * ESP WebOTA  https://github.com/scottchiefbaker/ESP-WebOTA MIT License Scott Baker 2019
 * AnalogRTCLib  Copyright(C) Analog Devices Inc.
-* ESP32S3 and Arduino libraries by Espressif Systems 2024
+* ESP32S3 and Arduino libraries by Espressif Systems 2025
 * OSC  https://github.com/CNMAT/OSC by Yotam Mann, Adrian Freed, CNMAT. 2013
